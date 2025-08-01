@@ -25,11 +25,6 @@ const Sidebar = () => {
       icon: Package
     },
     { 
-      path: "/orders", 
-      label: "Orders",
-      icon: ShoppingCart
-    },
-    { 
       path: "/categories", 
       label: "Categories",
       icon: FolderTree

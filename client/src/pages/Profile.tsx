@@ -1,9 +1,9 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useCallback } from "react";
 import Header from "@/components/Header";
 import { useAuth } from "@/components/AuthContext";
 import { useToast } from "@/hooks/use-toast";
 import axios from "axios";
-import { format } from "date-fns";
+import { format, isValid } from "date-fns";
 import { Badge } from "@/components/ui/badge";
 import {
   Accordion,
@@ -13,6 +13,43 @@ import {
 } from "@/components/ui/accordion";
 
 const API_URL = import.meta.env.VITE_REACT_APP_API_URL || "http://localhost:3000";
+
+// Type definitions
+interface ShippingAddress {
+  fullName: string;
+  address: string;
+  city: string;
+  state: string;
+  pinCode: string;
+  phone: string;
+}
+
+interface OrderItem {
+  _id: string;
+  name: string;
+  image: string;
+  price: number;
+  quantity: number;
+}
+
+interface Order {
+  _id: string;
+  createdAt: string;
+  orderStatus: 'pending' | 'processing' | 'shipped' | 'delivered' | 'cancelled';
+  paymentStatus: 'pending' | 'paid' | 'failed';
+  paymentMethod: string;
+  totalAmount: number;
+  items: OrderItem[];
+  shippingAddress: ShippingAddress;
+}
+
+interface User {
+  firstName: string;
+  lastName: string;
+  email: string;
+  role: string;
+  createdAt?: string;
+}
 
 const orderStatusColors: { [key: string]: string } = {
   pending: "bg-yellow-500",
@@ -29,25 +66,40 @@ const paymentStatusColors: { [key: string]: string } = {
 };
 
 const Profile = () => {
-  const { user } = useAuth();
+  const { user }: { user: User | null } = useAuth();
   const { toast } = useToast();
-  const [orders, setOrders] = useState<any[]>([]);
+  const [orders, setOrders] = useState<Order[]>([]);
   const [loading, setLoading] = useState(false);
 
-  useEffect(() => {
-    fetchOrders();
+  // Safe date formatting function
+  const formatDate = useCallback((dateString: string | undefined, formatString: string): string => {
+    if (!dateString) return 'N/A';
+    
+    try {
+      const date = new Date(dateString);
+      if (!isValid(date)) return 'N/A';
+      return format(date, formatString);
+    } catch (error) {
+      console.error('Date formatting error:', error);
+      return 'N/A';
+    }
   }, []);
 
-  const fetchOrders = async () => {
+  const fetchOrders = useCallback(async () => {
     if (!user) return;
     
     setLoading(true);
     try {
+      const controller = new AbortController();
       const res = await axios.get(`${API_URL}/orders/user`, {
-        withCredentials: true
+        withCredentials: true,
+        signal: controller.signal
       });
       setOrders(res.data.orders || []);
     } catch (err: any) {
+      // Don't show error if request was cancelled
+      if (axios.isCancel(err)) return;
+      
       toast({
         title: "Error",
         description: err?.response?.data?.message || "Failed to fetch orders",
@@ -56,7 +108,38 @@ const Profile = () => {
     } finally {
       setLoading(false);
     }
-  };
+  }, [user, toast]);
+
+  useEffect(() => {
+    fetchOrders();
+  }, [fetchOrders]);
+
+  // Loading component for better UX
+  const LoadingSpinner = () => (
+    <div className="text-center py-8">
+      <div className="inline-block animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-purple-600 mb-4"></div>
+      <p className="text-gray-700">Loading your orders...</p>
+    </div>
+  );
+
+  // Empty state component
+  const EmptyOrders = () => (
+    <div className="text-center py-8 border-2 border-dashed border-purple-200 rounded-2xl">
+      <div className="mx-auto h-16 w-16 rounded-full bg-purple-100 flex items-center justify-center mb-4">
+        <svg xmlns="http://www.w3.org/2000/svg" className="h-8 w-8 text-purple-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z" />
+        </svg>
+      </div>
+      <h3 className="text-xl font-medium text-gray-900 mb-2">No orders yet</h3>
+      <p className="text-gray-700 max-w-md mx-auto mb-4">Your jewelry collection is waiting! Explore our beautiful pieces.</p>
+      <button 
+        onClick={() => window.location.href = '/category'}
+        className="rounded-full px-6 py-3 bg-gradient-to-r from-purple-600 to-purple-800 hover:from-purple-700 hover:to-purple-900 text-white font-medium shadow-lg transition-all duration-200"
+      >
+        Browse Collections
+      </button>
+    </div>
+  );
 
   if (!user) {
     return (
@@ -68,7 +151,7 @@ const Profile = () => {
             <p className="text-gray-700 mb-6">You need to be logged in to view your profile.</p>
             <button 
               onClick={() => window.location.href = '/login'}
-              className="rounded-full px-6 py-3 bg-gradient-to-r from-purple-600 to-purple-800 hover:from-purple-700 hover:to-purple-900 text-white font-medium shadow-lg"
+              className="rounded-full px-6 py-3 bg-gradient-to-r from-purple-600 to-purple-800 hover:from-purple-700 hover:to-purple-900 text-white font-medium shadow-lg transition-all duration-200"
             >
               Go to Login
             </button>
@@ -93,7 +176,7 @@ const Profile = () => {
               <h2 className="text-3xl font-bold text-gray-900 mb-4 md:mb-0">
                 Profile <span className="text-purple-600">Information</span>
               </h2>
-              <button className="rounded-full px-5 py-2 bg-gradient-to-r from-purple-600 to-purple-800 hover:from-purple-700 hover:to-purple-900 text-white text-sm font-medium shadow-md">
+              <button className="rounded-full px-5 py-2 bg-gradient-to-r from-purple-600 to-purple-800 hover:from-purple-700 hover:to-purple-900 text-white text-sm font-medium shadow-md transition-all duration-200">
                 Edit Profile
               </button>
             </div>
@@ -117,7 +200,7 @@ const Profile = () => {
               <div className="bg-purple-50/50 p-5 rounded-xl border border-purple-100">
                 <label className="block text-sm font-medium text-purple-800 mb-1">Member Since</label>
                 <p className="text-lg font-medium text-gray-900">
-                  {user.createdAt ? format(new Date(user.createdAt), 'MMM d, yyyy') : 'N/A'}
+                  {formatDate(user.createdAt, 'MMM d, yyyy')}
                 </p>
               </div>
             </div>
@@ -135,26 +218,9 @@ const Profile = () => {
             </div>
             
             {loading ? (
-              <div className="text-center py-8">
-                <div className="inline-block animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-purple-600 mb-4"></div>
-                <p className="text-gray-700">Loading your orders...</p>
-              </div>
+              <LoadingSpinner />
             ) : orders.length === 0 ? (
-              <div className="text-center py-8 border-2 border-dashed border-purple-200 rounded-2xl">
-                <div className="mx-auto h-16 w-16 rounded-full bg-purple-100 flex items-center justify-center mb-4">
-                  <svg xmlns="http://www.w3.org/2000/svg" className="h-8 w-8 text-purple-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z" />
-                  </svg>
-                </div>
-                <h3 className="text-xl font-medium text-gray-900 mb-2">No orders yet</h3>
-                <p className="text-gray-700 max-w-md mx-auto mb-4">Your jewelry collection is waiting! Explore our beautiful pieces.</p>
-                <button 
-                  onClick={() => window.location.href = '/category'}
-                  className="rounded-full px-6 py-3 bg-gradient-to-r from-purple-600 to-purple-800 hover:from-purple-700 hover:to-purple-900 text-white font-medium shadow-lg"
-                >
-                  Browse Collections
-                </button>
-              </div>
+              <EmptyOrders />
             ) : (
               <Accordion type="single" collapsible className="w-full space-y-4">
                 {orders.map((order) => (
@@ -173,7 +239,9 @@ const Profile = () => {
                           </div>
                           <div>
                             <div className="font-bold text-gray-900">Order #{order._id.slice(-6).toUpperCase()}</div>
-                            <div className="text-sm text-gray-600">{format(new Date(order.createdAt), 'MMM d, yyyy - h:mm a')}</div>
+                            <div className="text-sm text-gray-600">
+                              {formatDate(order.createdAt, 'MMM d, yyyy - h:mm a')}
+                            </div>
                           </div>
                         </div>
                         
@@ -192,13 +260,17 @@ const Profile = () => {
                         <div>
                           <h4 className="font-bold text-lg text-gray-900 mb-3 pb-2 border-b border-purple-100">Items</h4>
                           <div className="space-y-4">
-                            {order.items.map((item: any) => (
+                            {order.items.map((item) => (
                               <div key={item._id} className="flex items-center gap-4 pb-3 border-b border-purple-50">
                                 <div className="flex-shrink-0">
                                   <img
                                     src={item.image}
                                     alt={item.name}
                                     className="w-16 h-16 object-cover rounded-lg border border-purple-100"
+                                    onError={(e) => {
+                                      const target = e.target as HTMLImageElement;
+                                      target.src = '/placeholder-image.jpg'; // Add fallback image
+                                    }}
                                   />
                                 </div>
                                 <div className="flex-grow">

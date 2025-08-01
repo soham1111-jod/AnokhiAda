@@ -7,6 +7,7 @@ const {
   getBanner,
   getAllData,
   getProductsBySlug,
+  getProductById,
 } = require("../controllers/getData");
 
 data.get("/getcategories", getCategories);
@@ -15,6 +16,7 @@ data.get("/getbanners", getBanner);
 data.get("/getAlldata", getAllData);
 // In getDataRoutes.js
 data.get("/getproductsbycategory", getProductsBySlug);
+data.get("/getproductbyid", getProductById);
 
 
 

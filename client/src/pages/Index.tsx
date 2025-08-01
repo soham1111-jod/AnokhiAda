@@ -14,7 +14,6 @@ const Index = () => {
       <AnnouncementBar />
       <Header />
       <div className="gradient-hero"> {/* Removed top padding to fix gap between navbar and main content */}
-        {/* BannerSlider removed as per user request */}
         {/* <HeroSection /> */}
         {/* <ScrollingWords /> */}
         {/* CategoryGrid removed as per user request */}

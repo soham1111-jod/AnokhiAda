@@ -1,42 +1,41 @@
-const Order = require('../models/Order');
-const User = require('../models/user');
-const { createNotification } = require('./notificationController');
+const Order = require("../models/Order");
+const User = require("../models/user");
+const { createNotification } = require("./notificationController");
 
 // Create new order
 const createOrder = async (req, res) => {
   try {
     const { items, shippingAddress, paymentMethod, totalAmount } = req.body;
-    
+
     if (!items?.length) {
-      return res.status(400).json({ message: 'Order must contain items' });
+      return res.status(400).json({ message: "Order must contain items" });
     }
 
     const order = await Order.create({
-      user: req.user._id,
+      userId: req.user._id,
       items,
       shippingAddress,
       paymentMethod,
       totalAmount,
-      paymentStatus: paymentMethod === 'cod' ? 'pending' : 'pending',
-      orderStatus: 'pending'
+      paymentStatus: "pending",
+      status: "pending",
     });
 
-    // Create notification for new order
     await createNotification(
       req.user._id,
-      'Order Placed Successfully',
+      "Order Placed Successfully",
       `Your order #${order._id.toString().slice(-6).toUpperCase()} has been placed and is being processed.`,
-      'order',
+      "order",
       order._id
     );
 
     res.status(201).json({
-      message: 'Order created successfully',
-      order
+      message: "Order created successfully",
+      order,
     });
   } catch (err) {
-    console.error('Create Order Error:', err);
-    res.status(500).json({ message: 'Error creating order' });
+    console.error("Create Order Error:", err);
+    res.status(500).json({ message: "Error creating order" });
   }
 };
 
@@ -44,101 +43,98 @@ const createOrder = async (req, res) => {
 const getAllOrders = async (req, res) => {
   try {
     const orders = await Order.find()
-      .populate('user', 'firstName email')
-      .sort('-createdAt');
-    
+      .populate("userId", "firstName email")
+      .sort("-createdAt");
+
     res.json({
-      message: 'Orders fetched successfully',
-      orders
+      message: "Orders fetched successfully",
+      orders,
     });
   } catch (err) {
-    console.error('Get All Orders Error:', err);
-    res.status(500).json({ message: 'Error fetching orders' });
+    console.error("Get All Orders Error:", err);
+    res.status(500).json({ message: "Error fetching orders" });
   }
 };
 
 // Get user orders
 const getUserOrders = async (req, res) => {
   try {
-    const orders = await Order.find({ user: req.user._id })
-      .sort('-createdAt');
-    
+    const orders = await Order.find({ userId: req.user._id }).sort("-createdAt");
+
     res.json({
-      message: 'Orders fetched successfully',
-      orders
+      message: "Orders fetched successfully",
+      orders,
     });
   } catch (err) {
-    console.error('Get User Orders Error:', err);
-    res.status(500).json({ message: 'Error fetching orders' });
+    console.error("Get User Orders Error:", err);
+    res.status(500).json({ message: "Error fetching orders" });
   }
 };
 
 // Get single order
 const getOrder = async (req, res) => {
   try {
-    const order = await Order.findById(req.params.id)
-      .populate('user', 'firstName email');
-    
+    const order = await Order.findById(req.params.id).populate("userId", "firstName email");
+
     if (!order) {
-      return res.status(404).json({ message: 'Order not found' });
+      return res.status(404).json({ message: "Order not found" });
     }
 
-    // Check if user is admin or order owner
-    if (req.user.role !== 'admin' && order.user._id.toString() !== req.user._id.toString()) {
-      return res.status(403).json({ message: 'Not authorized' });
+    if (
+      req.user.role !== "admin" &&
+      order.userId._id.toString() !== req.user._id.toString()
+    ) {
+      return res.status(403).json({ message: "Not authorized" });
     }
 
     res.json({
-      message: 'Order fetched successfully',
-      order
+      message: "Order fetched successfully",
+      order,
     });
   } catch (err) {
-    console.error('Get Order Error:', err);
-    res.status(500).json({ message: 'Error fetching order' });
+    console.error("Get Order Error:", err);
+    res.status(500).json({ message: "Error fetching order" });
   }
 };
 
 // Update order status (admin)
 const updateOrderStatus = async (req, res) => {
   try {
-    const { orderStatus } = req.body;
-    
-    const order = await Order.findById(req.params.id)
-      .populate('user', 'firstName email _id');
-    
+    const { status } = req.body;
+
+    const order = await Order.findById(req.params.id).populate("userId", "firstName email");
+
     if (!order) {
-      return res.status(404).json({ message: 'Order not found' });
+      return res.status(404).json({ message: "Order not found" });
     }
 
-    const oldStatus = order.orderStatus;
-    order.orderStatus = orderStatus;
+    order.status = status;
     await order.save();
 
-    // Create notification for status change
     const notificationMessages = {
-      processing: 'Your order is now being processed.',
-      shipped: 'Your order has been shipped! Track your delivery.',
-      delivered: 'Your order has been delivered. Enjoy!',
-      cancelled: 'Your order has been cancelled.'
+      processing: "Your order is now being processed.",
+      shipped: "Your order has been shipped! Track your delivery.",
+      delivered: "Your order has been delivered. Enjoy!",
+      cancelled: "Your order has been cancelled.",
     };
 
-    if (notificationMessages[orderStatus]) {
+    if (notificationMessages[status]) {
       await createNotification(
-        order.user._id,
-        `Order Status Updated: ${orderStatus.toUpperCase()}`,
-        `Order #${order._id.toString().slice(-6).toUpperCase()}: ${notificationMessages[orderStatus]}`,
-        'order',
+        order.userId._id,
+        `Order Status Updated: ${status.toUpperCase()}`,
+        `Order #${order._id.toString().slice(-6).toUpperCase()}: ${notificationMessages[status]}`,
+        "order",
         order._id
       );
     }
 
     res.json({
-      message: 'Order status updated successfully',
-      order
+      message: "Order status updated successfully",
+      order,
     });
   } catch (err) {
-    console.error('Update Order Status Error:', err);
-    res.status(500).json({ message: 'Error updating order status' });
+    console.error("Update Order Status Error:", err);
+    res.status(500).json({ message: "Error updating order status" });
   }
 };
 
@@ -146,45 +142,42 @@ const updateOrderStatus = async (req, res) => {
 const updatePaymentStatus = async (req, res) => {
   try {
     const { paymentStatus, paymentId } = req.body;
-    
-    const order = await Order.findById(req.params.id)
-      .populate('user', 'firstName email _id');
-    
+
+    const order = await Order.findById(req.params.id).populate("userId", "firstName email");
+
     if (!order) {
-      return res.status(404).json({ message: 'Order not found' });
+      return res.status(404).json({ message: "Order not found" });
     }
 
-    const oldStatus = order.paymentStatus;
     order.paymentStatus = paymentStatus;
     if (paymentId) {
       order.paymentId = paymentId;
     }
     await order.save();
 
-    // Create notification for payment status change
     const notificationMessages = {
-      paid: 'Payment received successfully for your order.',
-      failed: 'Payment failed for your order. Please try again.',
-      pending: 'Payment is pending for your order.'
+      paid: "Payment received successfully for your order.",
+      failed: "Payment failed for your order. Please try again.",
+      pending: "Payment is pending for your order.",
     };
 
     if (notificationMessages[paymentStatus]) {
       await createNotification(
-        order.user._id,
+        order.userId._id,
         `Payment Status: ${paymentStatus.toUpperCase()}`,
         `Order #${order._id.toString().slice(-6).toUpperCase()}: ${notificationMessages[paymentStatus]}`,
-        'order',
+        "order",
         order._id
       );
     }
 
     res.json({
-      message: 'Payment status updated successfully',
-      order
+      message: "Payment status updated successfully",
+      order,
     });
   } catch (err) {
-    console.error('Update Payment Status Error:', err);
-    res.status(500).json({ message: 'Error updating payment status' });
+    console.error("Update Payment Status Error:", err);
+    res.status(500).json({ message: "Error updating payment status" });
   }
 };
 
@@ -194,5 +187,5 @@ module.exports = {
   getUserOrders,
   getOrder,
   updateOrderStatus,
-  updatePaymentStatus
-}; 
+  updatePaymentStatus,
+};

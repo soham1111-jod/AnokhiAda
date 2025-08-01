@@ -172,6 +172,26 @@ const getProductsBySlug = async (req, res) => {
   }
 };
 
+const getProductById = async (req, res) => {
+  try {
+    const { id } = req.query;
+
+    if (!id) {
+      return res.status(400).json({ message: "Missing product ID" });
+    }
+
+    const product = await Product.findById(id).populate("Product_category");
+
+    if (!product) {
+      return res.status(404).json({ message: "Product not found" });
+    }
+
+    res.status(200).json({ product });
+  } catch (e) {
+    res.status(500).json({ message: "Error: " + e.message });
+  }
+};
+
 
 
 
@@ -181,6 +201,7 @@ module.exports = {
   getBanner,
   getAllData,
   getProductsBySlug, // ✅ Add this line
+  getProductById, // ✅ Add this line
 };
 
 
