@@ -17,7 +17,14 @@ import axios from "axios";
 const API_URL = import.meta.env.VITE_REACT_APP_API_URL || "http://localhost:3000";
 
 const cloudinaryOptions = [
-  { name: "Cloudinary 1", cloudName: `${import.meta.env.VITE_REACT_APP_CLOUDINARY_NAME}`, uploadPreset: `${import.meta.env.VITE_REACT_APP_CLOUDINARY_UPLOAD_PRESET}` },
+  {
+    name: "Primary Cloud",
+    endpoint: "/api/admin/getsignature" // This matches your server endpoint
+  },
+  {
+    name: "Secondary Cloud", 
+    endpoint: "/api/admin/getsignature" // Same endpoint, different cloudInstance parameter
+  }
 ];
 
 export default function Banners() {

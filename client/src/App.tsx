@@ -9,6 +9,7 @@ import ProductDetailPage from "./pages/ProductDetailPage";
 import ShopByCategoryPage from "./pages/ShopByCategoryPage";
 import WishlistPage from "./pages/WishlistPage";
 import CartPage from "./pages/CartPage";
+import SearchResults from "@/components/SearchResults"; // Add this import
 import NotFound from "./pages/NotFound";
 import Login from "./pages/Login";
 import Signup from "./pages/Signup";
@@ -26,6 +27,7 @@ import { CartProvider } from "@/components/CartContext";
 import MainLayout from "./components/MainLayout";
 import Profile from "./pages/Profile";
 import GoogleCallback from "./pages/GoogleCallback";
+import Orders from "./pages/Orders";
 
 const queryClient = new QueryClient();
 
@@ -49,7 +51,7 @@ const App = () => (
                     path="/product/:productId"
                     element={<ProductDetailPage />}
                   />
-
+                  <Route path="search" element={<SearchResults />} /> {/* Add this route */}
                   <Route path="wishlist" element={<WishlistPage />} />
                   <Route path="cart" element={<CartPage />} />
                 </Route>
@@ -72,6 +74,8 @@ const App = () => (
                 </Route>
 
                 <Route path="profile" element={<Profile />} />
+                <Route path="orders" element={<Orders />} />
+
                 <Route path="*" element={<NotFound />} />
               </Routes>
             </BrowserRouter>

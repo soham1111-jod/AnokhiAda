@@ -17,7 +17,7 @@ import { Loader2 } from "lucide-react";
 interface ProductFormProps {
   onSubmit: (product: any) => void;
   categories: { id: string; name: string }[];
-  cloudinaryOptions: { name: string; cloudName: string; uploadPreset: string }[];
+  cloudinaryOptions: { name: string; endpoint: string; }[];
 }
 
 const ProductForm: React.FC<ProductFormProps> = ({ onSubmit, categories, cloudinaryOptions }) => {
@@ -39,6 +39,7 @@ const ProductForm: React.FC<ProductFormProps> = ({ onSubmit, categories, cloudin
   };
 
   return (
+    <div className="max-h-[80vh] overflow-y-auto">
     <Card className="border-0 shadow-none">
       <CardContent className="space-y-6">
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -136,7 +137,9 @@ const ProductForm: React.FC<ProductFormProps> = ({ onSubmit, categories, cloudin
         </Button>
       </CardContent>
     </Card>
+    </div>
   );
 };
 
 export default ProductForm;
+

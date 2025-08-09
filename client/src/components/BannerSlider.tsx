@@ -37,26 +37,24 @@ interface BannerSliderProps {
   className?: string;
   headerHeight?: number;
   autoplayDelay?: number;
-  showThumbnails?: boolean;
   showPlayPause?: boolean;
 }
 
 // Loading skeleton component
 const BannerSkeleton: React.FC<{
   className?: string;
-  headerHeight: number;
+  headerHeight?: number;
 }> = ({ className, headerHeight }) => (
   <motion.div
-    className={`w-full max-w-7xl mx-auto px-4 py-8 ${className || ""}`}
-    style={{ marginTop: `${headerHeight}px` }}
+    className={`w-full relative ${className || ""} pt-16`}
     initial={{ opacity: 0 }}
     animate={{ opacity: 1 }}
   >
-    <div className="relative">
-      <Skeleton className="w-full h-[300px] md:h-[500px] lg:h-[600px] rounded-3xl bg-gradient-to-br from-purple-100 to-pink-100" />
+    <div className="w-full relative overflow-hidden bg-gray-100">
+      <Skeleton className="w-full h-full bg-gradient-to-br from-purple-100 to-pink-100" style={{ aspectRatio: '16/9', maxHeight: '550px' }} />
       <div className="absolute bottom-6 left-1/2 transform -translate-x-1/2 flex space-x-2">
         {Array.from({ length: 3 }).map((_, i) => (
-          <Skeleton key={i} className="w-3 h-3 rounded-full bg-white/60" />
+          <Skeleton key={i} className="w-2 h-2 rounded-full bg-white/60" />
         ))}
       </div>
     </div>
@@ -66,30 +64,29 @@ const BannerSkeleton: React.FC<{
 // Error state component
 const BannerError: React.FC<{
   className?: string;
-  headerHeight: number;
+  headerHeight?: number;
   onRetry?: () => void;
 }> = ({ className, headerHeight, onRetry }) => (
-  <div
-    className={`w-full max-w-7xl mx-auto px-4 py-8 ${className || ""}`}
-    style={{ marginTop: `${headerHeight}px` }}
-  >
-    <Card className="p-8 text-center bg-gradient-to-br from-purple-50/50 to-pink-50/50 border-purple-100">
-      <Sparkles className="w-12 h-12 text-purple-400 mx-auto mb-4" />
-      <h3 className="text-xl font-semibold text-gray-800 mb-2">
-        Unable to load banners
-      </h3>
-      <p className="text-gray-600 mb-4">
-        Please check your connection and try again
-      </p>
-      {onRetry && (
-        <Button
-          onClick={onRetry}
-          className="bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600"
-        >
-          Try Again
-        </Button>
-      )}
-    </Card>
+  <div className={`w-full relative ${className || ""} pt-16`}>
+    <div className="w-full max-w-4xl mx-auto px-4">
+      <Card className="p-8 text-center bg-gradient-to-br from-purple-50/50 to-pink-50/50 border-purple-100">
+        <Sparkles className="w-12 h-12 text-purple-400 mx-auto mb-4" />
+        <h3 className="text-xl font-semibold text-gray-800 mb-2">
+          Unable to load banners
+        </h3>
+        <p className="text-gray-600 mb-4">
+          Please check your connection and try again
+        </p>
+        {onRetry && (
+          <Button
+            onClick={onRetry}
+            className="bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600"
+          >
+            Try Again
+          </Button>
+        )}
+      </Card>
+    </div>
   </div>
 );
 
@@ -97,7 +94,6 @@ const BannerSlider: React.FC<BannerSliderProps> = ({
   className = "",
   headerHeight = 80,
   autoplayDelay = 4000,
-  showThumbnails = true,
   showPlayPause = true,
 }) => {
   const [banners, setBanners] = useState<Banner[]>([]);
@@ -159,15 +155,6 @@ const BannerSlider: React.FC<BannerSliderProps> = ({
     setIsPlaying(!isPlaying);
   }, [swiperInstance, isPlaying]);
 
-  const goToSlide = useCallback(
-    (index: number): void => {
-      if (swiperInstance) {
-        swiperInstance.slideTo(index);
-      }
-    },
-    [swiperInstance]
-  );
-
   const handleImageError = useCallback(
     (e: React.SyntheticEvent<HTMLImageElement, Event>): void => {
       const target = e.currentTarget as HTMLImageElement;
@@ -214,227 +201,202 @@ const BannerSlider: React.FC<BannerSliderProps> = ({
 
   return (
     <motion.section
-      className={`w-full max-w-7xl mx-auto px-4 py-8 relative ${className}`}
-      style={{ marginTop: `${headerHeight}px` }}
+      className={`w-full relative ${className} pt-16`}
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.6 }}
     >
-      {/* Background decoration */}
-      <div className="absolute inset-0 bg-gradient-to-r from-purple-500/5 via-transparent to-pink-500/5 rounded-3xl blur-3xl transform scale-110" />
-
-      <div className="relative">
-        {/* Header with controls */}
-        <div className="flex items-center justify-between mb-6">
-          <div>
-            <Badge
-              variant="secondary"
-              className="mb-2 bg-gradient-to-r from-purple-100 to-pink-100 text-purple-700 border-purple-200"
-            >
-              <Sparkles className="w-3 h-3 mr-1" />
-              Featured Collections
-            </Badge>
-            <h2 className="text-2xl md:text-3xl font-bold bg-gradient-to-r from-purple-600 to-pink-600 bg-clip-text text-transparent">
-              Discover Latest Trends
-            </h2>
+      {/* Optional header with controls */}
+      {showPlayPause && (
+        <div className="absolute top-4 right-4 z-30 flex items-center space-x-4">
+          {/* Slide counter */}
+          <div className="hidden md:flex items-center space-x-2 text-sm text-white/80 bg-black/20 backdrop-blur-sm rounded-full px-3 py-1">
+            <span className="font-medium text-white">
+              {String(currentSlide + 1).padStart(2, "0")}
+            </span>
+            <span>/</span>
+            <span>{String(banners.length).padStart(2, "0")}</span>
           </div>
 
-          {/* Slide counter and controls */}
-          <div className="flex items-center space-x-4">
-            <div className="hidden md:flex items-center space-x-2 text-sm text-gray-600">
-              <span className="font-medium text-purple-600">
-                {String(currentSlide + 1).padStart(2, "0")}
-              </span>
-              <span>/</span>
-              <span>{String(banners.length).padStart(2, "0")}</span>
-            </div>
-
-            {showPlayPause && (
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={togglePlayPause}
-                className="hidden md:flex items-center space-x-2 border-purple-200 hover:bg-purple-50"
-                aria-label={isPlaying ? "Pause slideshow" : "Play slideshow"}
-              >
-                {isPlaying ? (
-                  <Pause className="w-4 h-4" />
-                ) : (
-                  <Play className="w-4 h-4" />
-                )}
-                <span className="text-xs">{isPlaying ? "Pause" : "Play"}</span>
-              </Button>
+          {/* Play/Pause button */}
+          <Button
+            variant="secondary"
+            size="sm"
+            onClick={togglePlayPause}
+            className="hidden md:flex items-center space-x-2 bg-white/20 backdrop-blur-sm border-white/30 text-white hover:bg-white/30"
+            aria-label={isPlaying ? "Pause slideshow" : "Play slideshow"}
+          >
+            {isPlaying ? (
+              <Pause className="w-4 h-4" />
+            ) : (
+              <Play className="w-4 h-4" />
             )}
-          </div>
+            <span className="text-xs">{isPlaying ? "Pause" : "Play"}</span>
+          </Button>
         </div>
+      )}
 
-        {/* Main slider */}
-        <Card className="overflow-hidden border-0 shadow-2xl shadow-purple-500/10 bg-gradient-to-br from-white to-purple-50/30">
-          <Swiper
-            modules={[Autoplay, Pagination, EffectFade, Navigation]}
-            spaceBetween={0}
-            slidesPerView={1}
-            loop={banners.length > 1}
-            effect="fade"
-            fadeEffect={{ crossFade: true }}
-            autoplay={{
-              delay: autoplayDelay,
-              disableOnInteraction: false,
-              pauseOnMouseEnter: true,
-            }}
-            pagination={{
-              clickable: true,
-              bulletClass: "swiper-pagination-bullet !bg-white/60 !w-3 !h-3",
-              bulletActiveClass:
-                "swiper-pagination-bullet-active !bg-white !w-8 !rounded-full",
-              renderBullet: (index: number, className: string): string => {
-                return `<span class="${className} transition-all duration-300 cursor-pointer hover:!bg-white/80" aria-label="Go to slide ${
-                  index + 1
-                }"></span>`;
-              },
-            }}
-            navigation={{
-              prevEl: ".swiper-button-prev-custom",
-              nextEl: ".swiper-button-next-custom",
-            }}
-            onSwiper={handleSwiperInit}
-            onSlideChange={handleSlideChange}
-            className="rounded-3xl overflow-hidden group"
-          >
-            {banners.map((banner, index) => (
-              <SwiperSlide key={banner._id} className="relative">
-                <div
-                  className="relative w-full h-[300px] md:h-[500px] lg:h-[600px] overflow-hidden cursor-pointer"
-                  onClick={() => handleBannerClick(banner)}
-                >
-                  {/* Image with overlay */}
-                  <img
-                    src={banner.BannerUrl}
-                    alt={banner.BannerTitle || `Banner ${index + 1}`}
-                    className="w-full h-full object-cover transition-transform duration-[5000ms] hover:scale-105"
-                    loading={index === 0 ? "eager" : "lazy"}
-                    onError={handleImageError}
-                  />
-
-                  {/* Gradient overlay */}
-                  <div className="absolute inset-0 bg-gradient-to-t from-black/50 via-black/20 to-transparent" />
-                  <div className="absolute inset-0 bg-gradient-to-r from-black/30 via-transparent to-black/30" />
-
-                  {/* Content overlay */}
-                  {(banner.BannerTitle || banner.BannerDescription) && (
-                    <motion.div
-                      className="absolute bottom-8 left-8 right-8 text-white z-10"
-                      initial={{ opacity: 0, y: 30 }}
-                      animate={{ opacity: 1, y: 0 }}
-                      transition={{ delay: 0.3, duration: 0.6 }}
-                    >
-                      {banner.BannerTitle && (
-                        <h3 className="text-2xl md:text-4xl lg:text-5xl font-bold mb-3 leading-tight">
-                          {banner.BannerTitle}
-                        </h3>
-                      )}
-                      {banner.BannerDescription && (
-                        <p className="text-lg md:text-xl text-white/90 mb-6 max-w-2xl leading-relaxed">
-                          {banner.BannerDescription}
-                        </p>
-                      )}
-                      {banner.BannerLink && (
-                        <Button
-                          variant="secondary"
-                          size="lg"
-                          className="bg-white/20 backdrop-blur-sm border-white/30 text-white hover:bg-white/30 hover:scale-105 transition-all duration-300"
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            handleBannerClick(banner);
-                          }}
-                        >
-                          Explore Collection
-                        </Button>
-                      )}
-                    </motion.div>
-                  )}
-
-                  {/* Shimmer effect */}
-                  <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/10 to-transparent translate-x-[-100%] group-hover:translate-x-[100%] transition-transform duration-1000 ease-out" />
-                </div>
-              </SwiperSlide>
-            ))}
-          </Swiper>
-
-          {/* Custom navigation buttons */}
-          {banners.length > 1 && (
-            <>
-              <Button
-                variant="secondary"
-                size="icon"
-                className="swiper-button-prev-custom absolute left-4 top-1/2 transform -translate-y-1/2 z-20 w-12 h-12 bg-white/20 backdrop-blur-sm border-white/30 text-white hover:bg-white/30 hover:scale-110 transition-all duration-300 opacity-0 group-hover:opacity-100"
-                aria-label="Previous slide"
+      {/* Main banner slider - full width with clean design */}
+      <div className="w-full relative overflow-hidden bg-gray-100">
+        <Swiper
+          modules={[Autoplay, Pagination, EffectFade, Navigation]}
+          spaceBetween={0}
+          slidesPerView={1}
+          loop={banners.length > 1}
+          effect="fade"
+          fadeEffect={{ crossFade: true }}
+          autoplay={{
+            delay: autoplayDelay,
+            disableOnInteraction: false,
+            pauseOnMouseEnter: false,
+          }}
+          pagination={{
+            clickable: true,
+            bulletClass: "swiper-pagination-bullet !bg-white/70 !w-2 !h-2 !rounded-full",
+            bulletActiveClass:
+              "swiper-pagination-bullet-active !bg-white !w-8 !h-2 !rounded-full",
+            renderBullet: (index: number, className: string): string => {
+              return `<span class="${className} transition-all duration-300 cursor-pointer hover:!bg-white/90" aria-label="Go to slide ${
+                index + 1
+              }"></span>`;
+            },
+          }}
+          navigation={{
+            prevEl: ".swiper-button-prev-custom",
+            nextEl: ".swiper-button-next-custom",
+          }}
+          onSwiper={handleSwiperInit}
+          onSlideChange={handleSlideChange}
+          className="w-full group banner-slider"
+          style={{ aspectRatio: '16/9' }}
+        >
+          {banners.map((banner, index) => (
+            <SwiperSlide key={banner._id} className="relative">
+              <div
+                className="relative w-full h-full overflow-hidden cursor-pointer banner-slide"
+                onClick={() => handleBannerClick(banner)}
               >
-                <ChevronLeft className="w-6 h-6" />
-              </Button>
-
-              <Button
-                variant="secondary"
-                size="icon"
-                className="swiper-button-next-custom absolute right-4 top-1/2 transform -translate-y-1/2 z-20 w-12 h-12 bg-white/20 backdrop-blur-sm border-white/30 text-white hover:bg-white/30 hover:scale-110 transition-all duration-300 opacity-0 group-hover:opacity-100"
-                aria-label="Next slide"
-              >
-                <ChevronRight className="w-6 h-6" />
-              </Button>
-            </>
-          )}
-        </Card>
-
-        {/* Thumbnail navigation */}
-        {showThumbnails && banners.length > 1 && (
-          <motion.div
-            className="flex justify-center mt-6 space-x-3 overflow-x-auto pb-2"
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.8 }}
-          >
-            {banners.map((banner, index) => (
-              <motion.button
-                key={banner._id}
-                onClick={() => goToSlide(index)}
-                className={`relative flex-shrink-0 w-16 h-12 md:w-20 md:h-14 rounded-lg overflow-hidden border-2 transition-all duration-300 ${
-                  currentSlide === index
-                    ? "border-purple-500 shadow-lg shadow-purple-500/20 scale-105"
-                    : "border-purple-200 hover:border-purple-400"
-                }`}
-                whileHover={{ scale: 1.05 }}
-                whileTap={{ scale: 0.95 }}
-                aria-label={`Go to slide ${index + 1}`}
-              >
+                {/* Clean Banner Image - No text overlays */}
                 <img
                   src={banner.BannerUrl}
-                  alt={`Thumbnail ${index + 1}`}
-                  className="w-full h-full object-cover"
-                  loading="lazy"
+                  alt={banner.BannerTitle || `Banner ${index + 1}`}
+                  className="w-full h-full object-cover object-center transition-transform duration-[5000ms] hover:scale-105"
+                  loading={index === 0 ? "eager" : "lazy"}
+                  onError={handleImageError}
+                  style={{
+                    objectPosition: 'center center',
+                    minHeight: '100%',
+                    minWidth: '100%'
+                  }}
                 />
-                <div
-                  className={`absolute inset-0 transition-opacity duration-300 ${
-                    currentSlide === index ? "bg-purple-500/20" : "bg-black/40"
-                  }`}
-                />
-              </motion.button>
-            ))}
-          </motion.div>
+
+                {/* Subtle shimmer effect on hover */}
+                <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/10 to-transparent translate-x-[-100%] group-hover:translate-x-[100%] transition-transform duration-1200 ease-out" />
+              </div>
+            </SwiperSlide>
+          ))}
+        </Swiper>
+
+        {/* Navigation buttons */}
+        {banners.length > 1 && (
+          <>
+            <Button
+              variant="secondary"
+              size="icon"
+              className="swiper-button-prev-custom absolute left-6 md:left-10 top-1/2 transform -translate-y-1/2 z-20 w-14 h-14 bg-white/10 backdrop-blur-md border border-white/20 text-white hover:bg-white/20 hover:scale-110 transition-all duration-300 opacity-60 hover:opacity-100 rounded-full"
+              aria-label="Previous slide"
+            >
+              <ChevronLeft className="w-7 h-7" />
+            </Button>
+
+            <Button
+              variant="secondary"
+              size="icon"
+              className="swiper-button-next-custom absolute right-6 md:right-10 top-1/2 transform -translate-y-1/2 z-20 w-14 h-14 bg-white/10 backdrop-blur-md border border-white/20 text-white hover:bg-white/20 hover:scale-110 transition-all duration-300 opacity-60 hover:opacity-100 rounded-full"
+              aria-label="Next slide"
+            >
+              <ChevronRight className="w-7 h-7" />
+            </Button>
+          </>
         )}
       </div>
 
-      {/* Custom pagination styles */}
+      {/* Removed thumbnail navigation section completely */}
+
+      {/* Simplified banner styles - Mobile Responsive */}
       <style
         dangerouslySetInnerHTML={{
           __html: `
-        .swiper-pagination {
-          bottom: 24px !important;
+        .banner-slider {
+          aspect-ratio: 16/9;
+          max-height: 550px;
         }
-        .swiper-pagination-bullet {
-          transition: all 0.3s ease !important;
+        .banner-slider .swiper-pagination {
+          bottom: 20px !important;
+          z-index: 10;
         }
-        .swiper-pagination-bullet:hover {
-          transform: scale(1.2) !important;
+        .banner-slider .swiper-pagination-bullet {
+          transition: all 0.4s ease !important;
+          margin: 0 4px !important;
+          opacity: 0.7;
+        }
+        .banner-slider .swiper-pagination-bullet:hover {
+          transform: scale(1.3) !important;
+          opacity: 1;
+        }
+        .banner-slider .swiper-pagination-bullet-active {
+          opacity: 1 !important;
+        }
+        .banner-slide {
+          position: relative;
+          aspect-ratio: 16/9;
+        }
+        .banner-slider .swiper-slide img {
+          filter: brightness(1) contrast(1.02) saturate(1.05);
+          object-fit: cover;
+          object-position: center center;
+          width: 100%;
+          height: 100%;
+        }
+        
+        /* Mobile Responsive Styles */
+        @media (max-width: 640px) {
+          .banner-slider {
+            aspect-ratio: 3/2;
+            max-height: 300px;
+            min-height: 250px;
+          }
+          .banner-slide {
+            aspect-ratio: 3/2;
+          }
+          .banner-slider .swiper-pagination {
+            bottom: 15px !important;
+          }
+          .banner-slider .swiper-pagination-bullet {
+            margin: 0 3px !important;
+            width: 6px !important;
+            height: 6px !important;
+          }
+        }
+        
+        /* Extra small phones */
+        @media (max-width: 480px) {
+          .banner-slider {
+            aspect-ratio: 4/3;
+            max-height: 280px;
+            min-height: 220px;
+          }
+          .banner-slide {
+            aspect-ratio: 4/3;
+          }
+        }
+        
+        /* Very small phones */
+        @media (max-width: 360px) {
+          .banner-slider {
+            max-height: 250px;
+            min-height: 200px;
+          }
         }
       `,
         }}

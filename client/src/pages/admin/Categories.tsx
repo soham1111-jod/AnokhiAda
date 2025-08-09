@@ -26,8 +26,14 @@ import { Loader2, Plus, Trash2 } from "lucide-react";
 const API_URL = import.meta.env.VITE_REACT_APP_API_URL || "http://localhost:3000";
 
 const cloudinaryOptions = [
-  { name: "Cloudinary 1", cloudName: `${import.meta.env.VITE_REACT_APP_CLOUDINARY_NAME}`, uploadPreset: `${import.meta.env.VITE_REACT_APP_CLOUDINARY_UPLOAD_PRESET}`},
-  { name: "Cloudinary 2", cloudName: "", uploadPreset: "preset2" }
+  {
+    name: "Primary Cloud",
+    endpoint: "/api/admin/getsignature" // This matches your server endpoint
+  },
+  {
+    name: "Secondary Cloud", 
+    endpoint: "/api/admin/getsignature" // Same endpoint, different cloudInstance parameter
+  }
 ];
 
 export default function Categories() {

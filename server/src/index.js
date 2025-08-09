@@ -1,7 +1,9 @@
+
+
 require("dotenv").config();
 const express = require("express");
 const app = express();
-
+const ShipRocketrouter = require("./routes/ShiprocketRoutes")
 const cors = require("cors");
 const helmet = require("helmet");
 const database = require("./config/database");
@@ -15,6 +17,28 @@ const dataRouter = require("./routes/getDataRoutes");
 const orderRouter = require("./routes/orderRoutes");
 const wishlistRouter = require("./routes/wishlistRoutes");
 const notificationRouter = require("./routes/notificationRoutes");
+const cartRouter = require("./routes/cartRoutes");
+const numberVerifyrouter = require("./routes/NumberVerifyRoutes")
+
+// ✅ ADD THESE MODEL IMPORTS TO REGISTER THEM WITH MONGOOSE
+require("./models/AddPost");     // Registers the 'Products' model
+require("./models/Cart");        // Registers the 'Cart' model
+require("./models/Order");       // Registers the 'Order' model
+require("./models/Wishlist");    // Registers the 'Wishlist' model
+require("./models/user");        // Registers the 'User' model
+
+// Add this after your route registrations in index.js
+console.log("\n=== CART ROUTES DEBUG ===");
+console.log("Cart routes mounted at: /cart");
+console.log("Available cart endpoints:");
+console.log("GET /cart - Get cart");
+console.log("POST /cart/add - Add to cart");  
+console.log("PUT /cart/update/:productId - Update cart item");
+console.log("DELETE /cart/remove/:productId - Remove from cart");
+console.log("DELETE /cart/clear - Clear cart");
+console.log("POST /cart/sync - Sync cart");
+console.log("==========================\n");
+
 
 const PORT_NO = process.env.PORT_NO || 3000;
 app.use(express.json());
@@ -44,12 +68,16 @@ app.use("/admin", AdminRouter);
 app.use("/api", dataRouter);
 app.use("/orders", orderRouter);
 app.use("/wishlist", wishlistRouter);
+app.use("/cart", cartRouter);
 app.use("/notifications", notificationRouter);
+app.use("/shiprocket",ShipRocketrouter)
+app.use("/api",numberVerifyrouter)
 
 const initialConnection = async () => {
   try {
     await Promise.all([redisClient.connect(), database()]);
     console.log("Databases Connected");
+    console.log("All models registered successfully"); // Added confirmation
 
     app.listen(PORT_NO, () => {
       console.log(`Server is Listening on port no ${PORT_NO}`);

@@ -111,9 +111,26 @@ const ProductCard: React.FC<ProductCardProps> = ({ product }) => {
             className="w-full rounded-lg py-5 font-semibold bg-gradient-to-r from-purple-600 to-indigo-600 text-white hover:from-purple-700 hover:to-indigo-700 transition-all hover:scale-[1.02] shadow-md"
             onClick={() => {
               if (user) {
-                addToCart(product);
-                toast({ title: "Added to cart", duration: 3000 });
-              } else navigate("/login");
+                // Format product data to match CartContext expectations
+                const cartProduct = {
+                  id: typeof product.id === 'number' ? product.id : parseInt(String(product.id).slice(-8), 16),
+                  name: productName,
+                  price: productPrice,
+                  originalPrice: productOriginalPrice,
+                  image: productImage,
+                  rating: product.rating,
+                  isNew: productIsNew
+                };
+                
+                addToCart(cartProduct);
+                toast({ 
+                  title: "Added to cart", 
+                  description: `${productName} added to your cart`,
+                  duration: 3000 
+                });
+              } else {
+                navigate("/login");
+              }
             }}
           >
             <ShoppingCart size={18} className="mr-2" />

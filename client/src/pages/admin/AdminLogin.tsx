@@ -4,11 +4,8 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Eye, EyeOff, AlertCircle } from "lucide-react";
-import axios from "axios";
 import { useAuth } from "@/components/AuthContext";
 import { useToast } from "@/hooks/use-toast";
-
-const API_URL = import.meta.env.VITE_REACT_APP_API_URL || "http://localhost:3000";
 
 export default function AdminLogin() {
   const [email, setEmail] = useState("");
@@ -24,37 +21,31 @@ export default function AdminLogin() {
     e.preventDefault();
     setLoading(true);
     setError("");
+    
     try {
-      const res = await axios.post(`${API_URL}/auth/login`, {
-        email,
-        password
-      }, { withCredentials: true });
-      const data = res.data;
-      if (
-        data.accessToken &&
-        (data.reply?.role === "admin" || data.reply?.role === "superadmin")
-      ) {
-        localStorage.setItem("admin_token", data.accessToken);
-        localStorage.setItem("admin_user", JSON.stringify(data.reply));
-        login(data.reply); 
-        toast({
-          title: "Login Successful",
-          description: "Welcome back to the admin dashboard.",
-          variant: "default",
-        });
-        navigate("/admin");
+      console.log('🔍 AdminLogin - Attempting login with:', { email });
+      
+      // ✅ Use AuthContext login function properly
+      const result = await login({ email, password });
+      
+      if (result.success && result.user) {
+        // ✅ Check if user has admin permissions
+        if (result.user.role === "admin" || result.user.role === "superadmin") {
+          toast({
+            title: "Login Successful",
+            description: "Welcome back to the admin dashboard.",
+            variant: "default",
+          });
+          navigate("/admin");
+        } else {
+          setError("Access Denied: Insufficient permissions for admin access.");
+        }
       } else {
-        setError("Access Denied: Insufficient permissions for admin access.");
+        setError(result.error || "Authentication failed. Please check your credentials and try again.");
       }
     } catch (err: any) {
-      const errorMessage = err?.response?.data?.message;
-      if (errorMessage?.toLowerCase().includes("password")) {
-        setError("Invalid password. Please check your credentials and try again.");
-      } else if (errorMessage?.toLowerCase().includes("email")) {
-        setError("Email not found. Please verify your email address.");
-      } else {
-        setError("Authentication failed. Please check your credentials and try again.");
-      }
+      console.error('❌ AdminLogin error:', err);
+      setError("Authentication failed. Please check your credentials and try again.");
     } finally {
       setLoading(false);
     }

@@ -8,7 +8,7 @@ import { Eye, EyeOff } from "lucide-react";
 import axios from "axios";
 import { useAuth } from "@/components/AuthContext";
 
-const API_URL = import.meta.env.VITE_REACT_APP_API_URL || "http://localhost:3000/auth";
+const API_URL = import.meta.env.VITE_REACT_APP_API_URL || "http://localhost:3000";
 
 const Signup = () => {
   const navigate = useNavigate();

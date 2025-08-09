@@ -5,7 +5,7 @@ const { Schema } = mongoose;
 const cartItemSchema = new Schema({
   productId: {
     type: Schema.Types.ObjectId,
-    ref: 'Product',
+    ref: 'Products', // Change to 'Products' to match your model registration
     required: true
   },
   quantity: {

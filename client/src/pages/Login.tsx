@@ -12,50 +12,101 @@ const API_URL = import.meta.env.VITE_REACT_APP_API_URL || "http://localhost:3000
 const Login = () => {
   const navigate = useNavigate();
   const { toast } = useToast();
-  const { login } = useAuth();
+  const { login } = useAuth(); 
 
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
 
+  // ✅ FIXED: Use AuthContext login function properly
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
+    
     try {
-      const res = await axios.post(`${API_URL}/auth/login`, { email, password }, { withCredentials: true });
-      const data = res.data;
-      if (data.accessToken && data.reply) {
-        localStorage.setItem("user_token", data.accessToken);
-        localStorage.setItem("user", JSON.stringify(data.reply));
-        login(data.reply); 
-        toast({ title: "Login successful", description: `Welcome back, ${email}!` });
+      // ✅ Use AuthContext login function instead of manual axios call
+      const result = await login({ email, password });
+      
+      if (result.success) {
+        toast({ 
+          title: "Login successful", 
+          description: `Welcome back, ${email}!` 
+        });
         navigate("/");
       } else {
-        toast({ title: "Login failed", description: "Invalid email or password", variant: "destructive" });
+        toast({ 
+          title: "Login failed", 
+          description: result.error || "Invalid email or password", 
+          variant: "destructive" 
+        });
       }
     } catch (err: any) {
-      toast({ title: "Login failed", description: err?.response?.data?.message || "Login failed. Please try again.", variant: "destructive" });
+      toast({ 
+        title: "Login failed", 
+        description: "An unexpected error occurred. Please try again.", 
+        variant: "destructive" 
+      });
     } finally {
       setLoading(false);
     }
   };
 
-const handleGoogleLogin = () => {
-  window.location.href = `${API_URL}/auth/google`;
-};
+  // ✅ Alternative: If you prefer to keep manual axios call
+  const handleSubmitManual = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setLoading(true);
+    
+    try {
+      const res = await axios.post(`${API_URL}/auth/login`, 
+        { email, password }, 
+        { withCredentials: true }
+      );
+      
+      const data = res.data;
+      
+      if (data.accessToken && data.reply) {
+        // ✅ FIXED: Use loginWithData instead of login
+        const { loginWithData } = useAuth();
+        loginWithData(data.reply, data.accessToken);
+        
+        toast({ 
+          title: "Login successful", 
+          description: `Welcome back, ${email}!` 
+        });
+        navigate("/");
+      } else {
+        toast({ 
+          title: "Login failed", 
+          description: "Invalid email or password", 
+          variant: "destructive" 
+        });
+      }
+    } catch (err: any) {
+      toast({ 
+        title: "Login failed", 
+        description: err?.response?.data?.message || "Login failed. Please try again.", 
+        variant: "destructive" 
+      });
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleGoogleLogin = () => {
+    window.location.href = `${API_URL}/auth/google`;
+  };
 
   const togglePasswordVisibility = () => {
     setShowPassword(!showPassword);
   };
 
+  // ... rest of your JSX remains exactly the same
   return (
     <div className="min-h-screen bg-gradient-to-br from-purple-50 via-white to-pink-50 flex items-center justify-center p-4">
       <div className="w-full max-w-md">
-        {/* Glass Card Effect */}
         <div className="bg-white/80 backdrop-blur-lg rounded-3xl shadow-xl overflow-hidden border border-purple-100">
           <div className="p-8">
-            {/* Logo/Brand */}
             <div className="text-center mb-8">
               <div className="inline-block p-2 rounded-2xl bg-gradient-to-r from-purple-100 to-pink-100 mb-4">
                 <div className="bg-white rounded-xl p-3">
@@ -70,7 +121,6 @@ const handleGoogleLogin = () => {
             </div>
 
             <form onSubmit={handleSubmit} className="space-y-6">
-              {/* Email Input */}
               <div className="space-y-2">
                 <label htmlFor="email" className="block text-sm font-medium text-gray-700">
                   Email
@@ -93,7 +143,6 @@ const handleGoogleLogin = () => {
                 </div>
               </div>
 
-              {/* Password Input */}
               <div className="space-y-2">
                 <label htmlFor="password" className="block text-sm font-medium text-gray-700">
                   Password
@@ -127,7 +176,6 @@ const handleGoogleLogin = () => {
                 </div>
               </div>
 
-              {/* Remember Me & Forgot Password */}
               <div className="flex items-center justify-between">
                 <div className="flex items-center">
                   <input
@@ -148,7 +196,6 @@ const handleGoogleLogin = () => {
                 </Link>
               </div>
 
-              {/* Submit Button */}
               <Button
                 type="submit"
                 disabled={loading}
@@ -167,7 +214,6 @@ const handleGoogleLogin = () => {
                 )}
               </Button>
 
-              {/* Divider */}
               <div className="relative">
                 <div className="absolute inset-0 flex items-center">
                   <div className="w-full border-t border-gray-200"></div>
@@ -177,7 +223,6 @@ const handleGoogleLogin = () => {
                 </div>
               </div>
 
-              {/* Social Login */}
               <Button
                 type="button"
                 onClick={handleGoogleLogin}
@@ -205,7 +250,6 @@ const handleGoogleLogin = () => {
                 Continue with Google
               </Button>
 
-              {/* Sign Up Link */}
               <p className="text-center text-sm text-gray-600">
                 Don't have an account?{" "}
                 <Link to="/signup" className="font-medium text-purple-600 hover:text-purple-500">

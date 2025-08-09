@@ -1,47 +1,9 @@
-import { useEffect, useState, useCallback } from "react";
 import Header from "@/components/Header";
 import { useAuth } from "@/components/AuthContext";
-import { useToast } from "@/hooks/use-toast";
-import axios from "axios";
 import { format, isValid } from "date-fns";
-import { Badge } from "@/components/ui/badge";
-import {
-  Accordion,
-  AccordionContent,
-  AccordionItem,
-  AccordionTrigger,
-} from "@/components/ui/accordion";
+import { User, Mail, Shield, Calendar } from "lucide-react";
 
 const API_URL = import.meta.env.VITE_REACT_APP_API_URL || "http://localhost:3000";
-
-// Type definitions
-interface ShippingAddress {
-  fullName: string;
-  address: string;
-  city: string;
-  state: string;
-  pinCode: string;
-  phone: string;
-}
-
-interface OrderItem {
-  _id: string;
-  name: string;
-  image: string;
-  price: number;
-  quantity: number;
-}
-
-interface Order {
-  _id: string;
-  createdAt: string;
-  orderStatus: 'pending' | 'processing' | 'shipped' | 'delivered' | 'cancelled';
-  paymentStatus: 'pending' | 'paid' | 'failed';
-  paymentMethod: string;
-  totalAmount: number;
-  items: OrderItem[];
-  shippingAddress: ShippingAddress;
-}
 
 interface User {
   firstName: string;
@@ -51,28 +13,11 @@ interface User {
   createdAt?: string;
 }
 
-const orderStatusColors: { [key: string]: string } = {
-  pending: "bg-yellow-500",
-  processing: "bg-blue-500",
-  shipped: "bg-gradient-to-r from-purple-500 to-purple-700",
-  delivered: "bg-green-500",
-  cancelled: "bg-red-500",
-};
-
-const paymentStatusColors: { [key: string]: string } = {
-  pending: "bg-yellow-500",
-  paid: "bg-green-500",
-  failed: "bg-red-500",
-};
-
 const Profile = () => {
   const { user }: { user: User | null } = useAuth();
-  const { toast } = useToast();
-  const [orders, setOrders] = useState<Order[]>([]);
-  const [loading, setLoading] = useState(false);
 
   // Safe date formatting function
-  const formatDate = useCallback((dateString: string | undefined, formatString: string): string => {
+  const formatDate = (dateString: string | undefined, formatString: string): string => {
     if (!dateString) return 'N/A';
     
     try {
@@ -83,77 +28,61 @@ const Profile = () => {
       console.error('Date formatting error:', error);
       return 'N/A';
     }
-  }, []);
+  };
 
-  const fetchOrders = useCallback(async () => {
-    if (!user) return;
+  // Safe function to get user initials
+  const getUserInitials = (firstName?: string, lastName?: string): string => {
+    const first = firstName?.trim() || '';
+    const last = lastName?.trim() || '';
     
-    setLoading(true);
-    try {
-      const controller = new AbortController();
-      const res = await axios.get(`${API_URL}/orders/user`, {
-        withCredentials: true,
-        signal: controller.signal
-      });
-      setOrders(res.data.orders || []);
-    } catch (err: any) {
-      // Don't show error if request was cancelled
-      if (axios.isCancel(err)) return;
-      
-      toast({
-        title: "Error",
-        description: err?.response?.data?.message || "Failed to fetch orders",
-        variant: "destructive"
-      });
-    } finally {
-      setLoading(false);
+    if (first && last) {
+      return `${first.charAt(0).toUpperCase()}${last.charAt(0).toUpperCase()}`;
+    } else if (first) {
+      return first.charAt(0).toUpperCase();
+    } else if (last) {
+      return last.charAt(0).toUpperCase();
+    } else {
+      return 'U'; // Default to 'U' for User
     }
-  }, [user, toast]);
+  };
 
-  useEffect(() => {
-    fetchOrders();
-  }, [fetchOrders]);
-
-  // Loading component for better UX
-  const LoadingSpinner = () => (
-    <div className="text-center py-8">
-      <div className="inline-block animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-purple-600 mb-4"></div>
-      <p className="text-gray-700">Loading your orders...</p>
-    </div>
-  );
-
-  // Empty state component
-  const EmptyOrders = () => (
-    <div className="text-center py-8 border-2 border-dashed border-purple-200 rounded-2xl">
-      <div className="mx-auto h-16 w-16 rounded-full bg-purple-100 flex items-center justify-center mb-4">
-        <svg xmlns="http://www.w3.org/2000/svg" className="h-8 w-8 text-purple-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z" />
-        </svg>
-      </div>
-      <h3 className="text-xl font-medium text-gray-900 mb-2">No orders yet</h3>
-      <p className="text-gray-700 max-w-md mx-auto mb-4">Your jewelry collection is waiting! Explore our beautiful pieces.</p>
-      <button 
-        onClick={() => window.location.href = '/category'}
-        className="rounded-full px-6 py-3 bg-gradient-to-r from-purple-600 to-purple-800 hover:from-purple-700 hover:to-purple-900 text-white font-medium shadow-lg transition-all duration-200"
-      >
-        Browse Collections
-      </button>
-    </div>
-  );
+  // Safe function to get display name
+  const getDisplayName = (firstName?: string, lastName?: string): string => {
+    const first = firstName?.trim() || '';
+    const last = lastName?.trim() || '';
+    
+    if (first && last) {
+      return `${first} ${last}`;
+    } else if (first) {
+      return first;
+    } else if (last) {
+      return last;
+    } else {
+      return 'User'; // Default fallback
+    }
+  };
 
   if (!user) {
     return (
       <>
         <Header />
-        <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-purple-50 to-white">
-          <div className="text-center max-w-md p-8 bg-white rounded-3xl shadow-lg border border-purple-100">
-            <h1 className="text-3xl font-bold text-gray-900 mb-4">Please Login</h1>
-            <p className="text-gray-700 mb-6">You need to be logged in to view your profile.</p>
+        <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-purple-50/50 via-pink-50/30 to-white">
+          <div className="text-center max-w-md p-8 bg-white/90 backdrop-blur-sm rounded-3xl shadow-xl border border-purple-100/50">
+            <div className="w-16 h-16 bg-gradient-to-r from-purple-100 to-pink-100 rounded-full flex items-center justify-center mx-auto mb-6">
+              <User className="w-8 h-8 text-purple-600" />
+            </div>
+            <h1 className="text-3xl font-bold bg-gradient-to-r from-purple-600 to-pink-600 bg-clip-text text-transparent mb-4">
+              Please Login
+            </h1>
+            <p className="text-gray-600 mb-8 leading-relaxed">
+              You need to be logged in to view your profile information.
+            </p>
             <button 
               onClick={() => window.location.href = '/login'}
-              className="rounded-full px-6 py-3 bg-gradient-to-r from-purple-600 to-purple-800 hover:from-purple-700 hover:to-purple-900 text-white font-medium shadow-lg transition-all duration-200"
+              className="group relative inline-flex items-center gap-2 rounded-full px-8 py-3 bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 text-white font-semibold shadow-lg hover:shadow-xl transition-all duration-300 hover:scale-105"
             >
               Go to Login
+              <div className="absolute inset-0 rounded-full bg-gradient-to-r from-purple-400 to-pink-400 opacity-0 group-hover:opacity-20 transition-opacity duration-300" />
             </button>
           </div>
         </div>
@@ -164,191 +93,121 @@ const Profile = () => {
   return (
     <>
       <Header />
-      <div className="min-h-screen bg-gradient-to-br from-purple-50 to-white py-12 px-4 sm:px-6 lg:px-8">
-        {/* Decorative elements */}
-        <div className="fixed top-20 left-10 w-24 h-24 rounded-full bg-purple-200/30 blur-3xl"></div>
-        <div className="fixed bottom-40 right-10 w-36 h-36 rounded-full bg-pink-200/30 blur-3xl"></div>
+      {/* ✅ Updated: Added more top margin for laptop view */}
+      <div className="min-h-screen bg-gradient-to-br from-purple-50/50 via-pink-50/30 to-white py-16 px-4 sm:px-6 lg:px-8 pt-20 sm:pt-24 lg:pt-32">
+        {/* Enhanced Background Decorations */}
+        <div className="fixed top-20 left-10 w-32 h-32 rounded-full bg-purple-200/20 blur-3xl animate-pulse" />
+        <div className="fixed bottom-40 right-10 w-48 h-48 rounded-full bg-pink-200/20 blur-3xl animate-pulse" style={{ animationDelay: '2s' }} />
+        <div className="fixed top-1/2 right-1/4 w-24 h-24 rounded-full bg-purple-300/15 blur-2xl animate-pulse" style={{ animationDelay: '4s' }} />
         
         <div className="max-w-4xl mx-auto relative z-10">
-          {/* User Info Section */}
-          <div className="bg-white rounded-3xl shadow-lg border border-purple-100 p-6 md:p-8 mb-8">
-            <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-6">
-              <h2 className="text-3xl font-bold text-gray-900 mb-4 md:mb-0">
-                Profile <span className="text-purple-600">Information</span>
-              </h2>
-              <button className="rounded-full px-5 py-2 bg-gradient-to-r from-purple-600 to-purple-800 hover:from-purple-700 hover:to-purple-900 text-white text-sm font-medium shadow-md transition-all duration-200">
-                Edit Profile
-              </button>
+          {/* Enhanced Header */}
+          <div className="text-center mb-12">
+            <div className="inline-flex items-center gap-3 bg-gradient-to-r from-purple-100 to-pink-100 text-purple-700 px-6 py-2 rounded-full text-sm font-semibold mb-6">
+              <User className="w-4 h-4" />
+              Personal Information
             </div>
-            
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              <div className="bg-purple-50/50 p-5 rounded-xl border border-purple-100">
-                <label className="block text-sm font-medium text-purple-800 mb-1">Full Name</label>
-                <p className="text-lg font-medium text-gray-900">{user.firstName} {user.lastName}</p>
+            <h1 className="text-4xl md:text-5xl font-bold bg-gradient-to-r from-purple-600 via-pink-600 to-purple-800 bg-clip-text text-transparent mb-4">
+              My Profile
+            </h1>
+            <p className="text-lg text-gray-600 max-w-2xl mx-auto leading-relaxed">
+              Your account information and details
+            </p>
+          </div>
+
+          {/* Profile Avatar Section */}
+          <div className="bg-white/90 backdrop-blur-sm rounded-3xl shadow-xl border border-purple-100/50 p-8 md:p-10 mb-8">
+            <div className="flex flex-col items-center">
+              <div className="relative group">
+                <div className="w-24 h-24 md:w-32 md:h-32 bg-gradient-to-r from-purple-600 to-pink-600 rounded-full flex items-center justify-center shadow-lg">
+                  <span className="text-2xl md:text-4xl font-bold text-white">
+                    {getUserInitials(user.firstName, user.lastName)}
+                  </span>
+                </div>
               </div>
-              
-              <div className="bg-purple-50/50 p-5 rounded-xl border border-purple-100">
-                <label className="block text-sm font-medium text-purple-800 mb-1">Email Address</label>
-                <p className="text-lg font-medium text-gray-900">{user.email}</p>
-              </div>
-              
-              <div className="bg-purple-50/50 p-5 rounded-xl border border-purple-100">
-                <label className="block text-sm font-medium text-purple-800 mb-1">Account Type</label>
-                <p className="text-lg font-medium text-gray-900 capitalize">{user.role}</p>
-              </div>
-              
-              <div className="bg-purple-50/50 p-5 rounded-xl border border-purple-100">
-                <label className="block text-sm font-medium text-purple-800 mb-1">Member Since</label>
-                <p className="text-lg font-medium text-gray-900">
-                  {formatDate(user.createdAt, 'MMM d, yyyy')}
-                </p>
+              <div className="text-center mt-6">
+                <h2 className="text-2xl md:text-3xl font-bold text-gray-900 mb-2">
+                  {getDisplayName(user.firstName, user.lastName)}
+                </h2>
+                <div className="inline-flex items-center gap-2 bg-gradient-to-r from-purple-50 to-pink-50 px-4 py-2 rounded-full border border-purple-200/50">
+                  <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse" />
+                  <span className="text-sm font-medium text-gray-600">Active Account</span>
+                </div>
               </div>
             </div>
           </div>
 
-          {/* Orders Section */}
-          <div className="bg-white rounded-3xl shadow-lg border border-purple-100 p-6 md:p-8">
-            <div className="flex justify-between items-center mb-6">
-              <h2 className="text-3xl font-bold text-gray-900">
-                Order <span className="text-purple-600">History</span>
-              </h2>
-              <div className="text-purple-700 font-medium">
-                {orders.length} {orders.length === 1 ? 'Order' : 'Orders'}
+          {/* Profile Information Grid */}
+          <div className="bg-white/90 backdrop-blur-sm rounded-3xl shadow-xl border border-purple-100/50 p-8 md:p-10">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+              {/* Personal Details */}
+              <div className="space-y-6">
+                <div className="flex items-center gap-3 mb-6">
+                  <div className="w-8 h-8 bg-gradient-to-r from-purple-100 to-pink-100 rounded-lg flex items-center justify-center">
+                    <User className="w-4 h-4 text-purple-600" />
+                  </div>
+                  <h3 className="text-xl font-bold text-gray-900">Personal Details</h3>
+                </div>
+
+                <div className="bg-gradient-to-br from-purple-50/50 to-pink-50/30 p-6 rounded-2xl border border-purple-100/50 hover:shadow-lg transition-all duration-300">
+                  <div className="flex items-center gap-3 mb-3">
+                    <User className="w-5 h-5 text-purple-600" />
+                    <label className="text-sm font-semibold text-purple-800 uppercase tracking-wide">Full Name</label>
+                  </div>
+                  <p className="text-xl font-bold text-gray-900">
+                    {getDisplayName(user.firstName, user.lastName)}
+                  </p>
+                </div>
+
+                <div className="bg-gradient-to-br from-purple-50/50 to-pink-50/30 p-6 rounded-2xl border border-purple-100/50 hover:shadow-lg transition-all duration-300">
+                  <div className="flex items-center gap-3 mb-3">
+                    <Mail className="w-5 h-5 text-purple-600" />
+                    <label className="text-sm font-semibold text-purple-800 uppercase tracking-wide">Email Address</label>
+                  </div>
+                  <p className="text-xl font-bold text-gray-900">{user.email || 'Not provided'}</p>
+                </div>
+              </div>
+
+              {/* Account Information */}
+              <div className="space-y-6">
+                <div className="flex items-center gap-3 mb-6">
+                  <div className="w-8 h-8 bg-gradient-to-r from-purple-100 to-pink-100 rounded-lg flex items-center justify-center">
+                    <Shield className="w-4 h-4 text-purple-600" />
+                  </div>
+                  <h3 className="text-xl font-bold text-gray-900">Account Information</h3>
+                </div>
+
+                <div className="bg-gradient-to-br from-purple-50/50 to-pink-50/30 p-6 rounded-2xl border border-purple-100/50 hover:shadow-lg transition-all duration-300">
+                  <div className="flex items-center gap-3 mb-3">
+                    <Shield className="w-5 h-5 text-purple-600" />
+                    <label className="text-sm font-semibold text-purple-800 uppercase tracking-wide">Account Type</label>
+                  </div>
+                  <div className="flex items-center gap-3">
+                    <span className="inline-flex items-center px-4 py-2 rounded-full text-sm font-semibold bg-gradient-to-r from-purple-600 to-pink-600 text-white capitalize">
+                      {user.role || 'user'}
+                    </span>
+                    {user.role === 'admin' && (
+                      <span className="text-xs text-purple-600 font-medium bg-purple-100 px-2 py-1 rounded-full">
+                        Admin Privileges
+                      </span>
+                    )}
+                  </div>
+                </div>
+
+                <div className="bg-gradient-to-br from-purple-50/50 to-pink-50/30 p-6 rounded-2xl border border-purple-100/50 hover:shadow-lg transition-all duration-300">
+                  <div className="flex items-center gap-3 mb-3">
+                    <Calendar className="w-5 h-5 text-purple-600" />
+                    <label className="text-sm font-semibold text-purple-800 uppercase tracking-wide">Member Since</label>
+                  </div>
+                  <p className="text-xl font-bold text-gray-900">
+                    {formatDate(user.createdAt, 'MMMM d, yyyy')}
+                  </p>
+                  <p className="text-sm text-gray-500 mt-1">
+                    {formatDate(user.createdAt, "'Joined' EEEE 'at' h:mm a")}
+                  </p>
+                </div>
               </div>
             </div>
-            
-            {loading ? (
-              <LoadingSpinner />
-            ) : orders.length === 0 ? (
-              <EmptyOrders />
-            ) : (
-              <Accordion type="single" collapsible className="w-full space-y-4">
-                {orders.map((order) => (
-                  <AccordionItem 
-                    key={order._id} 
-                    value={order._id}
-                    className="border-2 border-purple-100 rounded-2xl overflow-hidden hover:border-purple-300 transition-colors"
-                  >
-                    <AccordionTrigger className="px-5 py-4 hover:no-underline bg-purple-50/50">
-                      <div className="flex flex-col md:flex-row md:items-center justify-between w-full gap-3">
-                        <div className="flex items-center gap-4">
-                          <div className="bg-white p-2 rounded-lg border border-purple-200">
-                            <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6 text-purple-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z" />
-                            </svg>
-                          </div>
-                          <div>
-                            <div className="font-bold text-gray-900">Order #{order._id.slice(-6).toUpperCase()}</div>
-                            <div className="text-sm text-gray-600">
-                              {formatDate(order.createdAt, 'MMM d, yyyy - h:mm a')}
-                            </div>
-                          </div>
-                        </div>
-                        
-                        <div className="flex flex-wrap gap-3">
-                          <Badge className={`${orderStatusColors[order.orderStatus]} text-white px-3 py-1 rounded-full`}>
-                            {order.orderStatus}
-                          </Badge>
-                          <div className="font-bold text-lg">₹{order.totalAmount.toFixed(2)}</div>
-                        </div>
-                      </div>
-                    </AccordionTrigger>
-                    
-                    <AccordionContent className="px-5 py-4 bg-white">
-                      <div className="space-y-6">
-                        {/* Order Items */}
-                        <div>
-                          <h4 className="font-bold text-lg text-gray-900 mb-3 pb-2 border-b border-purple-100">Items</h4>
-                          <div className="space-y-4">
-                            {order.items.map((item) => (
-                              <div key={item._id} className="flex items-center gap-4 pb-3 border-b border-purple-50">
-                                <div className="flex-shrink-0">
-                                  <img
-                                    src={item.image}
-                                    alt={item.name}
-                                    className="w-16 h-16 object-cover rounded-lg border border-purple-100"
-                                    onError={(e) => {
-                                      const target = e.target as HTMLImageElement;
-                                      target.src = '/placeholder-image.jpg'; // Add fallback image
-                                    }}
-                                  />
-                                </div>
-                                <div className="flex-grow">
-                                  <div className="font-medium text-gray-900">{item.name}</div>
-                                  <div className="flex justify-between mt-1">
-                                    <div className="text-sm text-gray-600">
-                                      Quantity: {item.quantity} × ₹{item.price.toFixed(2)}
-                                    </div>
-                                    <div className="font-medium">
-                                      ₹{(item.price * item.quantity).toFixed(2)}
-                                    </div>
-                                  </div>
-                                </div>
-                              </div>
-                            ))}
-                          </div>
-                        </div>
-
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                          {/* Shipping Address */}
-                          <div className="bg-purple-50/30 p-4 rounded-xl border border-purple-100">
-                            <h4 className="font-bold text-lg text-gray-900 mb-3 flex items-center gap-2">
-                              <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 text-purple-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6" />
-                              </svg>
-                              Shipping Address
-                            </h4>
-                            <div className="text-gray-700 space-y-1">
-                              <p className="font-medium">{order.shippingAddress.fullName}</p>
-                              <p>{order.shippingAddress.address}</p>
-                              <p>
-                                {order.shippingAddress.city}, {order.shippingAddress.state} -{" "}
-                                {order.shippingAddress.pinCode}
-                              </p>
-                              <p className="mt-2">
-                                <span className="font-medium">Phone:</span> {order.shippingAddress.phone}
-                              </p>
-                            </div>
-                          </div>
-
-                          {/* Payment Info */}
-                          <div className="bg-purple-50/30 p-4 rounded-xl border border-purple-100">
-                            <h4 className="font-bold text-lg text-gray-900 mb-3 flex items-center gap-2">
-                              <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 text-purple-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z" />
-                              </svg>
-                              Payment Information
-                            </h4>
-                            <div className="space-y-3">
-                              <div className="flex items-center gap-3">
-                                <span className="font-medium">Method:</span>
-                                <span className="bg-white px-3 py-1 rounded-full border border-purple-200 text-sm">
-                                  {order.paymentMethod.toUpperCase()}
-                                </span>
-                              </div>
-                              
-                              <div className="flex items-center gap-3">
-                                <span className="font-medium">Status:</span>
-                                <Badge className={`${paymentStatusColors[order.paymentStatus]} px-3 py-1 rounded-full text-white`}>
-                                  {order.paymentStatus}
-                                </Badge>
-                              </div>
-                              
-                              <div className="pt-3 border-t border-purple-100">
-                                <div className="flex justify-between font-medium">
-                                  <span>Total Amount:</span>
-                                  <span>₹{order.totalAmount.toFixed(2)}</span>
-                                </div>
-                              </div>
-                            </div>
-                          </div>
-                        </div>
-                      </div>
-                    </AccordionContent>
-                  </AccordionItem>
-                ))}
-              </Accordion>
-            )}
           </div>
         </div>
       </div>

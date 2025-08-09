@@ -1,4 +1,4 @@
-// new added by soham - Admin dashboard with user activity tracking, orders, and cart monitoring
+// Dashboard.tsx - Enhanced with comprehensive null checking
 import { useState, useEffect } from "react";
 import axios from "axios";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -30,7 +30,7 @@ interface Order {
     _id: string;
     firstName: string;
     email: string;
-  };
+  } | null; // ✅ Make userId nullable
   items: Array<{
     productId: string;
     quantity: number;
@@ -46,12 +46,12 @@ interface CartItem {
     _id: string;
     firstName: string;
     email: string;
-  };
+  } | null; // ✅ Make userId nullable
   items: Array<{
     productId: {
       Product_name: string;
       Product_price: number;
-    };
+    } | null; // ✅ Make productId nullable too
     quantity: number;
   }>;
   updatedAt: string;
@@ -71,24 +71,50 @@ export default function Dashboard() {
   const fetchDashboardData = async () => {
     try {
       const adminToken = localStorage.getItem("admin_token");
+      
+      if (!adminToken) {
+        throw new Error("No admin token found");
+      }
+
       const headers = {
-        withCredentials: true,
-        headers: adminToken ? { Authorization: `Bearer ${adminToken}` } : {},
+        Authorization: `Bearer ${adminToken}`,
+        'Content-Type': 'application/json'
       };
 
       const [usersRes, ordersRes, cartsRes] = await Promise.all([
-        axios.get(`${API_URL}/admin/users`, headers),
-        axios.get(`${API_URL}/admin/orders`, headers),
-        axios.get(`${API_URL}/admin/carts`, headers),
+        axios.get(`${API_URL}/admin/users`, { headers }),
+        axios.get(`${API_URL}/admin/orders`, { headers }),
+        axios.get(`${API_URL}/admin/carts`, { headers }),
       ]);
 
-      setUsers(usersRes.data.users);
-      setOrders(ordersRes.data.orders);
-      setCarts(cartsRes.data.carts);
+      // ✅ Enhanced data validation and filtering
+      const validUsers = Array.isArray(usersRes.data.users) 
+        ? usersRes.data.users.filter((user: any) => user && user._id && user.firstName) 
+        : [];
+      
+      const validOrders = Array.isArray(ordersRes.data.orders) 
+        ? ordersRes.data.orders.filter((order: any) => order && order._id)
+        : [];
+      
+      const validCarts = Array.isArray(cartsRes.data.carts) 
+        ? cartsRes.data.carts.filter((cart: any) => cart && cart.userId)
+        : [];
+
+      console.log('✅ Dashboard data loaded:', {
+        users: validUsers.length,
+        orders: validOrders.length,
+        carts: validCarts.length
+      });
+
+      setUsers(validUsers);
+      setOrders(validOrders);
+      setCarts(validCarts);
+      
     } catch (error: any) {
+      console.error('❌ Dashboard fetch error:', error);
       toast({
         title: "Error",
-        description: "Failed to fetch dashboard data. Please try again.",
+        description: error.message || "Failed to fetch dashboard data. Please try again.",
         variant: "destructive",
       });
     } finally {
@@ -97,7 +123,7 @@ export default function Dashboard() {
   };
 
   const getStatusColor = (status: string) => {
-    switch (status.toLowerCase()) {
+    switch (status?.toLowerCase()) {
       case 'completed':
         return 'bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400';
       case 'pending':
@@ -127,7 +153,7 @@ export default function Dashboard() {
             <Users className="w-4 h-4 text-gray-500" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{users.length}</div>
+            <div className="text-2xl font-bold">{users?.length || 0}</div>
             <p className="text-xs text-gray-500">Registered users</p>
           </CardContent>
         </Card>
@@ -138,7 +164,7 @@ export default function Dashboard() {
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">
-              {orders.filter(order => order.status.toLowerCase() === 'pending').length}
+              {orders?.filter(order => order?.status?.toLowerCase() === 'pending').length || 0}
             </div>
             <p className="text-xs text-gray-500">Orders in progress</p>
           </CardContent>
@@ -149,7 +175,7 @@ export default function Dashboard() {
             <ShoppingCart className="w-4 h-4 text-gray-500" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{carts.length}</div>
+            <div className="text-2xl font-bold">{carts?.length || 0}</div>
             <p className="text-xs text-gray-500">Users with items in cart</p>
           </CardContent>
         </Card>
@@ -172,26 +198,44 @@ export default function Dashboard() {
               </TableRow>
             </TableHeader>
             <TableBody>
-              {orders.slice(0, 5).map((order) => (
-                <TableRow key={order._id}>
-                  <TableCell>
-                    <div>
-                      <div className="font-medium">{order.userId.firstName}</div>
-                      <div className="text-sm text-gray-500">{order.userId.email}</div>
-                    </div>
-                  </TableCell>
-                  <TableCell>{order.items.length} items</TableCell>
-                  <TableCell>₹{order.totalAmount}</TableCell>
-                  <TableCell>
-                    <Badge className={getStatusColor(order.status)}>
-                      {order.status}
-                    </Badge>
-                  </TableCell>
-                  <TableCell>
-                    {new Date(order.createdAt).toLocaleDateString()}
+              {orders && orders.length > 0 ? (
+                orders.slice(0, 5).map((order) => {
+                  // ✅ Skip orders with null/invalid data
+                  if (!order || !order._id) return null;
+
+                  return (
+                    <TableRow key={order._id}>
+                      <TableCell>
+                        <div>
+                          {/* ✅ FIXED: Proper null checking */}
+                          <div className="font-medium">
+                            {order.userId?.firstName || 'Unknown Customer'}
+                          </div>
+                          <div className="text-sm text-gray-500">
+                            {order.userId?.email || 'No email available'}
+                          </div>
+                        </div>
+                      </TableCell>
+                      <TableCell>{order.items?.length || 0} items</TableCell>
+                      <TableCell>₹{order.totalAmount || 0}</TableCell>
+                      <TableCell>
+                        <Badge className={getStatusColor(order.status)}>
+                          {order.status || 'Unknown'}
+                        </Badge>
+                      </TableCell>
+                      <TableCell>
+                        {order.createdAt ? new Date(order.createdAt).toLocaleDateString() : 'Unknown'}
+                      </TableCell>
+                    </TableRow>
+                  );
+                }).filter(Boolean) // Remove null entries
+              ) : (
+                <TableRow>
+                  <TableCell colSpan={5} className="text-center text-gray-500">
+                    No orders found
                   </TableCell>
                 </TableRow>
-              ))}
+              )}
             </TableBody>
           </Table>
         </CardContent>
@@ -213,25 +257,46 @@ export default function Dashboard() {
               </TableRow>
             </TableHeader>
             <TableBody>
-              {carts.slice(0, 5).map((cart) => (
-                <TableRow key={cart.userId._id}>
-                  <TableCell>
-                    <div>
-                      <div className="font-medium">{cart.userId.firstName}</div>
-                      <div className="text-sm text-gray-500">{cart.userId.email}</div>
-                    </div>
-                  </TableCell>
-                  <TableCell>{cart.items.length} items</TableCell>
-                  <TableCell>
-                    ₹{cart.items.reduce((total, item) => 
-                      total + (item.productId.Product_price * item.quantity), 0
-                    )}
-                  </TableCell>
-                  <TableCell>
-                    {new Date(cart.updatedAt).toLocaleDateString()}
+              {carts && carts.length > 0 ? (
+                carts.slice(0, 5).map((cart) => {
+                  // ✅ Skip carts with null/invalid data
+                  if (!cart || !cart.userId?._id) return null;
+
+                  return (
+                    <TableRow key={cart.userId._id}>
+                      <TableCell>
+                        <div>
+                          {/* ✅ FIXED: Proper null checking */}
+                          <div className="font-medium">
+                            {cart.userId?.firstName || 'Unknown Customer'}
+                          </div>
+                          <div className="text-sm text-gray-500">
+                            {cart.userId?.email || 'No email available'}
+                          </div>
+                        </div>
+                      </TableCell>
+                      <TableCell>{cart.items?.length || 0} items</TableCell>
+                      <TableCell>
+                        ₹{cart.items?.reduce((total, item) => {
+                          // ✅ Safe calculation with null checks
+                          const price = item?.productId?.Product_price || 0;
+                          const quantity = item?.quantity || 0;
+                          return total + (price * quantity);
+                        }, 0) || 0}
+                      </TableCell>
+                      <TableCell>
+                        {cart.updatedAt ? new Date(cart.updatedAt).toLocaleDateString() : 'Unknown'}
+                      </TableCell>
+                    </TableRow>
+                  );
+                }).filter(Boolean) // Remove null entries
+              ) : (
+                <TableRow>
+                  <TableCell colSpan={4} className="text-center text-gray-500">
+                    No active carts found
                   </TableCell>
                 </TableRow>
-              ))}
+              )}
             </TableBody>
           </Table>
         </CardContent>

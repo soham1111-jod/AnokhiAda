@@ -8,7 +8,7 @@ import { Loader2 } from "lucide-react";
 
 interface BannerFormProps {
   onSubmit: (banner: any) => void;
-  cloudinaryOptions: { name: string; cloudName: string; uploadPreset: string }[];
+  cloudinaryOptions: { name: string; endpoint: string; }[];
 }
 
 const BannerForm: React.FC<BannerFormProps> = ({ onSubmit, cloudinaryOptions }) => {
@@ -29,6 +29,7 @@ const BannerForm: React.FC<BannerFormProps> = ({ onSubmit, cloudinaryOptions }) 
   };
 
   return (
+    <div className="max-h-[80vh] overflow-y-auto">
     <Card className="border-0 shadow-none">
       <CardContent className="space-y-6 pt-0">
         <div className="space-y-2">
@@ -85,6 +86,7 @@ const BannerForm: React.FC<BannerFormProps> = ({ onSubmit, cloudinaryOptions }) 
         </Button>
       </CardContent>
     </Card>
+    </div>
   );
 };
 

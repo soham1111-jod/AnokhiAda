@@ -43,6 +43,14 @@ const AddPostSchema = new Schema(
       type: String,
       index: true,
     },
+    isHamper_product: {
+      type: Boolean,
+      default: false,
+    },
+    Hamper_price: {
+      type: Number,
+      default: 0,
+    },
   },
   {
     timestamps: true,

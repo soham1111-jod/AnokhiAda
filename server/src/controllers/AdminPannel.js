@@ -9,7 +9,11 @@ const slugify = require("slugify");
 
 const Getsignature = async (req, res) => {
   try {
-    const { Product_name, Product_category } = req.body;
+    const {
+      Product_name,
+      Product_category,
+      cloudInstance = "primary",
+    } = req.body;
     const timestamp = Math.round(new Date().getTime() / 1000);
     const public_id = `AnokhiAda/Product/${Product_category}/${Product_name}_${timestamp}`;
 
@@ -18,24 +22,40 @@ const Getsignature = async (req, res) => {
       public_id,
     };
 
+    // Choose which Cloudinary instance to use
+    const cloudName =
+      cloudInstance === "secondary"
+        ? process.env.CLOUDINARY_NAME2
+        : process.env.CLOUDINARY_NAME;
+    const apiKey =
+      cloudInstance === "secondary"
+        ? process.env.CLOUDINARY_API_KEY2
+        : process.env.CLOUDINARY_API_KEY;
+    const apiSecret =
+      cloudInstance === "secondary"
+        ? process.env.CLOUDINARY_API_SECRATE2
+        : process.env.CLOUDINARY_API_SECRATE;
+
     const signature = cloudinary.utils.api_sign_request(
       uploadparams,
-      process.env.CLOUDINARY_API_SECRATE
+      apiSecret
     );
+
     const response = {
       signature,
       timestamp,
       public_id: public_id,
-      cloud_name: process.env.CLOUDINARY_NAME,
-      CLOUDINARY_API_KEY: process.env.CLOUDINARY_API_KEY,
-      uploadUrl: `https://api.cloudinary.com/v1_1/${process.env.CLOUDINARY_NAME}/image/upload`,
+      cloud_name: cloudName,
+      CLOUDINARY_API_KEY: apiKey,
+      uploadUrl: `https://api.cloudinary.com/v1_1/${cloudName}/image/upload`,
     };
+
     res.json({
-      message: "Requst fullfiled",
+      message: "Request fulfilled",
       signature: response,
     });
   } catch (e) {
-    res.status(500).json({ Message: "Faild To Upload Reason: " + e.Message });
+    res.status(500).json({ Message: "Failed To Upload Reason: " + e.message });
   }
 };
 
@@ -356,7 +376,6 @@ const getCarts = async (req, res) => {
     });
   }
 };
-
 
 module.exports = {
   Getsignature,

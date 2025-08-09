@@ -1,20 +1,38 @@
 const mongoose = require('mongoose');
 
+const wishlistItemSchema = new mongoose.Schema({
+  productId: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'Products',
+    required: true
+  },
+  quantity: {
+    type: Number,
+    required: true,
+    default: 1,
+    min: 1,
+    max: 99
+  },
+  dateAdded: {
+    type: Date,
+    default: Date.now
+  }
+});
+
 const wishlistSchema = new mongoose.Schema({
   user: {
     type: mongoose.Schema.Types.ObjectId,
     ref: 'User',
-    required: true
+    required: true,
+    unique: true // This creates the index automatically
   },
-  products: [{
-    type: mongoose.Schema.Types.ObjectId,
-    ref: 'Product'
-  }]
+  items: [wishlistItemSchema]
 }, {
   timestamps: true
 });
 
-// Ensure each product appears only once in a user's wishlist
-wishlistSchema.index({ user: 1, 'products': 1 }, { unique: true });
 
-module.exports = mongoose.model('Wishlist', wishlistSchema); 
+// Keep only the performance index that doesn't conflict
+wishlistSchema.index({ 'items.productId': 1 });
+
+module.exports = mongoose.model('Wishlist', wishlistSchema);

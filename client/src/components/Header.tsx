@@ -1,400 +1,22 @@
-// import { useState, useEffect, useRef } from "react";
-// import { useNavigate } from "react-router-dom";
-// import { Search, ShoppingCart, Heart, User, Menu, X } from "lucide-react";
-// import { Button } from "@/components/ui/button";
-// import { useAuth } from "@/components/AuthContext";
-// import { useCart } from "./CartContext";
-// import { useWishlist } from "./WishlistContext";
-// import { useToast } from "@/hooks/use-toast";
-// import { motion, AnimatePresence } from "framer-motion";
-
-// const Header = () => {
-//   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
-//   const [showNavbar, setShowNavbar] = useState(true);
-//   const [isSearchOpen, setIsSearchOpen] = useState(false);
-//   const [isProfileMenuOpen, setIsProfileMenuOpen] = useState(false);
-//   const searchPanelRef = useRef(null);
-//   const profileMenuRef = useRef(null);
-//   const lastScrollY = useRef(0);
-//   const navigate = useNavigate();
-//   const { user, logout } = useAuth();
-//   const { cart, clearCart } = useCart();
-//   const { clearWishlist } = useWishlist();
-//   const { toast } = useToast();
-
-//   useEffect(() => {
-//     const handleScroll = () => {
-//       const currentScrollY = window.scrollY;
-//       if (currentScrollY > lastScrollY.current && currentScrollY > 60) {
-//         setShowNavbar(false);
-//       } else {
-//         setShowNavbar(true);
-//       }
-//       lastScrollY.current = currentScrollY;
-//     };
-//     window.addEventListener("scroll", handleScroll);
-
-//     // Click outside handler
-//     const handleClickOutside = (event) => {
-//       if (searchPanelRef.current && !searchPanelRef.current.contains(event.target)) {
-//         setIsSearchOpen(false);
-//       }
-//       if (profileMenuRef.current && !profileMenuRef.current.contains(event.target)) {
-//         setIsProfileMenuOpen(false);
-//       }
-//     };
-
-//     if (isSearchOpen || isProfileMenuOpen || isMobileMenuOpen) {
-//       document.addEventListener("mousedown", handleClickOutside);
-//     } else {
-//       document.removeEventListener("mousedown", handleClickOutside);
-//     }
-
-//     return () => {
-//       window.removeEventListener("scroll", handleScroll);
-//       document.removeEventListener("mousedown", handleClickOutside);
-//     };
-//   }, [isSearchOpen, isProfileMenuOpen, isMobileMenuOpen]);
-
-//   const navigationItems = [
-//     { name: "Home", path: "/" },
-//     { name: "Shop", path: "/category" },
-//     { name: "Collections", path: "/category" },
-//     { name: "About", path: "/about" },
-//     { name: "Contact", path: "/contact" }
-//   ];
-
-//   const handleLogout = () => {
-//     logout();
-//     clearCart();
-//     clearWishlist();
-//     toast({
-//       title: "Logged out successfully",
-//       description: "Come back soon!",
-//       variant: "default"
-//     });
-//     navigate("/");
-//     setIsProfileMenuOpen(false);
-//   };
-
-//   const isAuthenticated = !!user;
-//   const totalQuantity = cart.reduce((sum, item) => sum + (item.quantity || 1), 0);
-
-//   return (
-//     <>
-//       <header
-//         className={`fixed top-0 left-0 right-0 z-50 backdrop-blur-md bg-purple-50/95 border-b border-purple-100 shadow-sm transition-transform duration-300 ${
-//           showNavbar ? "translate-y-0" : "-translate-y-full"
-//         }`}
-//       >
-//         <div className="container mx-auto px-4">
-//           <div className="flex items-center justify-between py-4">
-//             {/* Logo */}
-//             <div 
-//               className="flex items-center cursor-pointer" 
-//               onClick={() => navigate("/")}
-//             >
-//               <h1 className="text-2xl md:text-3xl font-bold text-gray-900 tracking-tight">
-//                 <span className="text-purple-600">Anokhi</span> <span className="text-gray-600">अदा</span>
-//               </h1>
-//             </div>
-
-//             {/* Desktop Navigation */}
-//             <nav className="hidden lg:flex items-center justify-center absolute left-1/2 transform -translate-x-1/2">
-//               <div className="flex space-x-8">
-//                 {navigationItems.map((item) => (
-//                   <a
-//                     key={item.name}
-//                     href={item.path}
-//                     onClick={(e) => {
-//                       e.preventDefault();
-//                       navigate(item.path);
-//                     }}
-//                     className="text-base font-semibold text-gray-800 hover:text-purple-600 transition-colors duration-300 relative py-1 group"
-//                   >
-//                     {item.name}
-//                     <span className="absolute bottom-0 left-0 w-0 h-1 bg-purple-600 transition-all duration-300 group-hover:w-full"></span>
-//                   </a>
-//                 ))}
-//               </div>
-//             </nav>
-
-//               {/* Right Actions */}
-//               <div className="flex items-center gap-3 md:gap-4">
-//                 {user?.role === "admin" && (
-//                   <Button
-//                     variant="default"
-//                     className="bg-gradient-to-r from-purple-600 to-purple-800 hover:from-purple-700 hover:to-purple-900 text-white"
-//                     onClick={() => navigate("/admin")}
-//                   >
-//                     Admin
-//                   </Button>
-//                 )}
-//                 <Button
-//                   variant="ghost"
-//                   size="icon"
-//                   className="hover:bg-transparent text-gray-800 hover:text-purple-600"
-//                   onClick={() => setIsSearchOpen(true)}
-//                 >
-//                   <Search size={20} />
-//                 </Button>
-                
-//                 <Button 
-//                   variant="ghost" 
-//                   size="icon" 
-//                   className="hover:bg-transparent text-gray-800 hover:text-purple-600 relative"
-//                   onClick={() => navigate("/wishlist")}
-//                 >
-//                   <Heart size={20} />
-//                 </Button>
-                
-//                 <Button
-//                   variant="ghost"
-//                   size="icon"
-//                   className="hover:bg-transparent text-gray-800 hover:text-purple-600 relative"
-//                   onClick={() => navigate("/cart")}
-//                 >
-//                   <ShoppingCart size={20} />
-//                   {totalQuantity > 0 && (
-//                     <span className="absolute top-0 right-0 inline-flex items-center justify-center w-5 h-5 text-xs font-bold text-white bg-red-500 rounded-full">
-//                       {totalQuantity}
-//                     </span>
-//                   )}
-//                 </Button>
-              
-//               {/* Desktop Auth */}
-//               <div className="hidden lg:flex items-center">
-//                 {!isAuthenticated ? (
-//                   <div className="flex gap-2">
-//                     <Button
-//                       variant="ghost"
-//                       className="text-gray-800 hover:text-purple-600"
-//                       onClick={() => navigate("/login")}
-//                     >
-//                       Sign In
-//                     </Button>
-//                     <Button
-//                       variant="default"
-//                       className="bg-gradient-to-r from-purple-600 to-purple-800 hover:from-purple-700 hover:to-purple-900 text-white"
-//                       onClick={() => navigate("/signup")}
-//                     >
-//                       Sign Up
-//                     </Button>
-//                   </div>
-//                 ) : (
-//                   <div className="relative" ref={profileMenuRef}>
-// <Button
-//   variant="ghost"
-//   size="icon"   
-//   className="hover:bg-transparent"
-//   onClick={() => setIsProfileMenuOpen(!isProfileMenuOpen)}
-//   title={user.firstName || user.email}
-// >
-//   <User size={20} className="text-gray-800" />
-// </Button>
-                    
-//                     <AnimatePresence>
-//                       {isProfileMenuOpen && (
-//                         <motion.div
-//                           initial={{ opacity: 0, y: 10 }}
-//                           animate={{ opacity: 1, y: 0 }}
-//                           exit={{ opacity: 0, y: 10 }}
-//                           className="absolute right-0 mt-2 w-48 bg-white border border-purple-100 rounded-lg shadow-xl z-50 overflow-hidden"
-//                         >
-// <div className="px-4 py-3 border-b border-purple-100">
-//   <p className="text-sm font-medium text-gray-900">{user.firstName || user.email}</p>
-//   <p className="text-xs text-gray-500">{user.firstName || user.email}</p>
-// </div>
-//                           <button
-//                             className="w-full text-left px-4 py-3 text-sm text-gray-700 hover:bg-purple-50"
-//                             onClick={() => {
-//                               setIsProfileMenuOpen(false);
-//                               navigate("/profile");
-//                             }}
-//                           >
-//                             My Profile
-//                           </button>
-//                           <button
-//                             className="w-full text-left px-4 py-3 text-sm text-gray-700 hover:bg-purple-50"
-//                             onClick={() => {
-//                               setIsProfileMenuOpen(false);
-//                               navigate("/orders");
-//                             }}
-//                           >
-//                             My Orders
-//                           </button>
-//                           {user.isAdmin && (
-//                             <button
-//                               className="w-full text-left px-4 py-3 text-sm text-gray-700 hover:bg-purple-50 border-t border-purple-100"
-//                               onClick={() => {
-//                                 setIsProfileMenuOpen(false);
-//                                 navigate("/admin");
-//                               }}
-//                             >
-//                               Admin
-//                             </button>
-//                           )}
-//                           <button
-//                             className="w-full text-left px-4 py-3 text-sm text-gray-700 hover:bg-purple-50 border-t border-purple-100"
-//                             onClick={handleLogout}
-//                           >
-//                             Logout
-//                           </button>
-//                         </motion.div>
-//                       )}
-//                     </AnimatePresence>
-//                   </div>
-//                 )}
-//               </div>
-              
-//               {/* Mobile Menu Button */}
-//               <Button
-//                 variant="ghost"
-//                 size="icon"
-//                 className="lg:hidden text-gray-800 hover:bg-transparent"
-//                 onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
-//               >
-//                 {isMobileMenuOpen ? <X size={24} /> : <Menu size={24} />}
-//               </Button>
-//             </div>
-//           </div>
-//         </div>
-//       </header>
-
-//       {/* Mobile Menu */}
-//       <AnimatePresence>
-//         {isMobileMenuOpen && (
-//           <motion.div
-//             initial={{ opacity: 0, height: 0 }}
-//             animate={{ opacity: 1, height: "auto" }}
-//             exit={{ opacity: 0, height: 0 }}
-//             className="fixed top-16 inset-x-0 bg-white z-40 lg:hidden shadow-lg border-b border-purple-100"
-//           >
-//             <div className="container mx-auto px-4 py-4">
-//               <div className="flex flex-col space-y-2">
-//                 {navigationItems.map((item) => (
-//                   <a
-//                     key={item.name}
-//                     href={item.path}
-//                     onClick={(e) => {
-//                       e.preventDefault();
-//                       navigate(item.path);
-//                       setIsMobileMenuOpen(false);
-//                     }}
-//                     className="py-3 px-4 text-gray-800 hover:bg-purple-50 rounded-lg font-medium"
-//                   >
-//                     {item.name}
-//                   </a>
-//                 ))}
-//                 <div className="pt-4 border-t border-purple-100 mt-2">
-//                   {!isAuthenticated ? (
-//                     <div className="flex flex-col gap-3">
-//                       <Button
-//                         variant="outline"
-//                         className="w-full py-3 border-purple-300 text-gray-800"
-//                         onClick={() => {
-//                           navigate("/login");
-//                           setIsMobileMenuOpen(false);
-//                         }}
-//                       >
-//                         Sign In
-//                       </Button>
-//                       <Button
-//                         variant="default"
-//                         className="w-full py-3 bg-gradient-to-r from-purple-600 to-purple-800"
-//                         onClick={() => {
-//                           navigate("/signup");
-//                           setIsMobileMenuOpen(false);
-//                         }}
-//                       >
-//                         Create Account
-//                       </Button>
-//                     </div>
-//                   ) : (
-//                     <div className="flex flex-col gap-2">
-//                       <div className="px-4 py-3">
-//                         <p className="text-sm font-medium text-gray-900">{user.firstName || user.email}</p>
-//                         <p className="text-xs text-gray-500">{user.email}</p>
-//                       </div>
-//                       <button
-//                         className="w-full text-left py-3 px-4 text-gray-800 hover:bg-purple-50 rounded-lg"
-//                         onClick={() => {
-//                           navigate("/profile");
-//                           setIsMobileMenuOpen(false);
-//                         }}
-//                       >
-//                         My Profile
-//                       </button>
-//                       <button
-//                         className="w-full text-left py-3 px-4 text-gray-800 hover:bg-purple-50 rounded-lg"
-//                         onClick={() => {
-//                           navigate("/orders");
-//                           setIsMobileMenuOpen(false);
-//                         }}
-//                       >
-//                         My Orders
-//                       </button>
-//                       <button
-//                         className="w-full text-left py-3 px-4 text-gray-800 hover:bg-purple-50 rounded-lg text-red-600"
-//                         onClick={handleLogout}
-//                       >
-//                         Logout
-//                       </button>
-//                     </div>
-//                   )}
-//                 </div>
-//               </div>
-//             </div>
-//           </motion.div>
-//         )}
-//       </AnimatePresence>
-
-//       {/* Search Panel */}
-//       <AnimatePresence>
-//         {isSearchOpen && (
-//           <motion.div
-//             initial={{ opacity: 0, y: -20 }}
-//             animate={{ opacity: 1, y: 0 }}
-//             exit={{ opacity: 0, y: -20 }}
-//             className="fixed top-16 left-0 right-0 bg-white z-40 shadow-lg border-b border-purple-100"
-//             ref={searchPanelRef}
-//           >
-//             <div className="container mx-auto px-4 py-4">
-//               <div className="relative">
-//                 <Search className="absolute left-3 top-3 text-gray-400" size={20} />
-//                 <input
-//                   type="text"
-//                   placeholder="Search for jewelry, collections, or categories..."
-//                   className="w-full pl-10 pr-4 py-3 border border-purple-200 rounded-lg focus:ring-2 focus:ring-purple-600 focus:border-transparent"
-//                   autoFocus
-//                 />
-//                 <Button
-//                   variant="ghost"
-//                   size="icon"
-//                   className="absolute right-3 top-2 text-gray-500 hover:text-gray-700"
-//                   onClick={() => setIsSearchOpen(false)}
-//                 >
-//                   <X size={20} />
-//                 </Button>
-//               </div>
-//             </div>
-//           </motion.div>
-//         )}
-//       </AnimatePresence>
-//     </>
-//   );
-// };
-
-// export default Header;
-
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, useMemo, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
-import { Search, ShoppingCart, Heart, User, Menu, X, LayoutDashboard } from "lucide-react";
+import {
+  Search,
+  ShoppingCart,
+  Heart,
+  User,
+  Menu,
+  X,
+  LayoutDashboard,
+  Clock,
+  TrendingUp,
+} from "lucide-react";
 import { useAuth } from "@/components/AuthContext";
 import { useCart } from "./CartContext";
 import { useWishlist } from "./WishlistContext";
 import { useToast } from "@/hooks/use-toast";
 import { motion, AnimatePresence } from "framer-motion";
+import Fuse from "fuse.js";
 
 const Header = () => {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
@@ -402,38 +24,310 @@ const Header = () => {
   const [isProfileMenuOpen, setIsProfileMenuOpen] = useState(false);
   const [isMobileSearchOpen, setIsMobileSearchOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
-  const [suggestions, setSuggestions] = useState([]);
+  const [searchResults, setSearchResults] = useState([]);
+  const [recentSearches, setRecentSearches] = useState([]);
+  const [isSearching, setIsSearching] = useState(false);
+  const [showSearchResults, setShowSearchResults] = useState(false);
+  const [products, setProducts] = useState([]);
+  const [productsLoading, setProductsLoading] = useState(true);
+
   const profileMenuRef = useRef(null);
   const mobileSearchRef = useRef(null);
+  const searchResultsRef = useRef(null);
   const lastScrollY = useRef(0);
+  const searchTimeoutRef = useRef(null);
 
-  const { user, logout } = useAuth();
+  const { user, logout, isAuthenticated } = useAuth();
   const { cart, clearCart } = useCart();
-  const { clearWishlist } = useWishlist();
+  const { clearWishlist, getTotalItems, getTotalUniqueItems } = useWishlist();
   const { toast } = useToast();
   const navigate = useNavigate();
 
-  const isAuthenticated = !!user;
-  const totalQuantity = cart.reduce((sum, item) => sum + (item.quantity || 1), 0);
+  // Calculate cart and wishlist totals
+  const totalQuantity = useMemo(() => {
+    return cart?.reduce((sum, item) => sum + (item.quantity || 0), 0) || 0;
+  }, [cart]);
 
+  const totalWishlistItems = useMemo(() => {
+    return getTotalItems ? getTotalItems() : 0;
+  }, [getTotalItems]);
+
+  const uniqueWishlistItems = useMemo(() => {
+    return getTotalUniqueItems ? getTotalUniqueItems() : 0;
+  }, [getTotalUniqueItems]);
+
+  // Enhanced Fuse.js configuration with better performance
+  const fuseOptions = useMemo(() => ({
+    keys: [
+      { name: "Product_name", weight: 0.7 },
+      { name: "Product_category.category", weight: 0.2 },
+      { name: "Product_discription", weight: 0.1 },
+    ],
+    threshold: 0.5, // Balanced - not too strict, not too loose
+    minMatchCharLength: 2,
+    includeScore: true,
+    includeMatches: true,
+    ignoreLocation: true,
+    findAllMatches: false,
+    shouldSort: true,
+    isCaseSensitive: false,
+    distance: 100, // Limit search distance for better performance
+  }), []);
+
+  // Create Fuse instance with proper memoization
+  const fuse = useMemo(() => {
+    if (products.length === 0) return null;
+    return new Fuse(products, fuseOptions);
+  }, [products, fuseOptions]);
+
+  // Load recent searches from localStorage
   useEffect(() => {
+    try {
+      const saved = localStorage.getItem("recentSearches");
+      if (saved) {
+        const parsed = JSON.parse(saved);
+        setRecentSearches(Array.isArray(parsed) ? parsed.slice(0, 5) : []);
+      }
+    } catch (error) {
+      console.error("Error loading recent searches:", error);
+      setRecentSearches([]);
+    }
+  }, []);
+
+  // Fetch products from backend
+  useEffect(() => {
+    const fetchProducts = async () => {
+      setProductsLoading(true);
+      try {
+        const API_URL = import.meta.env.VITE_REACT_APP_API_URL || "http://localhost:3000";
+        const response = await fetch(`${API_URL}/api/getproducts`);
+        
+        if (!response.ok) {
+          throw new Error(`HTTP error! status: ${response.status}`);
+        }
+        
+        const data = await response.json();
+        
+        // Fix: Properly extract products
+        const productArray = data.products || [];
+        console.log("Products loaded:", productArray.length);
+        
+        setProducts(Array.isArray(productArray) ? productArray : []);
+      } catch (error) {
+        console.error("Error fetching products:", error);
+        setProducts([]);
+        toast({
+          title: "Connection Issue",
+          description: "Unable to load products. Please check your connection.",
+          variant: "destructive",
+        });
+      } finally {
+        setProductsLoading(false);
+      }
+    };
+
+    fetchProducts();
+  }, [toast]);
+
+  // Optimized single search function
+  const performSearch = useCallback(async (query) => {
+    if (!query.trim() || !fuse) {
+      setSearchResults([]);
+      setShowSearchResults(false);
+      return;
+    }
+
+    setIsSearching(true);
+    setShowSearchResults(true);
+
+    try {
+      // Use the memoized Fuse instance
+      const searchResponse = fuse.search(query);
+
+      if (searchResponse.length === 0) {
+        // Optimized fallback search with early termination
+        const manualResults = products.filter(product => {
+          const searchTerm = query.toLowerCase();
+          return (
+            (product.Product_name || '').toLowerCase().includes(searchTerm) ||
+            (product.Product_discription || '').toLowerCase().includes(searchTerm) ||
+            (product.Product_category?.category || '').toLowerCase().includes(searchTerm)
+          );
+        }).slice(0, 8); // Limit results for performance
+
+        setSearchResults(manualResults.map(item => ({
+          ...item,
+          score: 0.5,
+          matches: [],
+        })));
+      } else {
+        // Process Fuse.js results
+        const results = searchResponse
+          .slice(0, 8) // Limit results early
+          .map((result) => ({
+            ...result.item,
+            score: result.score,
+            matches: result.matches,
+          }));
+
+        setSearchResults(results);
+      }
+    } catch (error) {
+      console.error("Search error:", error);
+      setSearchResults([]);
+      toast({
+        title: "Search Error",
+        description: "Something went wrong while searching. Please try again.",
+        variant: "destructive",
+      });
+    } finally {
+      setIsSearching(false);
+    }
+  }, [fuse, products, toast]);
+
+  // Optimized debounced search
+  useEffect(() => {
+    if (searchTimeoutRef.current) {
+      clearTimeout(searchTimeoutRef.current);
+    }
+
+    searchTimeoutRef.current = setTimeout(() => {
+      if (searchQuery.trim()) {
+        performSearch(searchQuery);
+      } else {
+        setSearchResults([]);
+        setShowSearchResults(false);
+      }
+    }, 300);
+
+    return () => {
+      if (searchTimeoutRef.current) {
+        clearTimeout(searchTimeoutRef.current);
+      }
+    };
+  }, [searchQuery, performSearch]);
+
+  // Save recent search
+  const saveRecentSearch = useCallback((query) => {
+    const trimmed = query.trim();
+    if (!trimmed) return;
+
+    try {
+      const updated = [
+        trimmed,
+        ...recentSearches.filter((s) => s !== trimmed),
+      ].slice(0, 5);
+      setRecentSearches(updated);
+      localStorage.setItem("recentSearches", JSON.stringify(updated));
+    } catch (error) {
+      console.error("Error saving recent search:", error);
+    }
+  }, [recentSearches]);
+
+  // Handle search submission
+  const handleSearch = useCallback((e) => {
+    e.preventDefault();
+    if (!searchQuery.trim()) {
+      toast({
+        title: "Empty search",
+        description: "Please enter a keyword to search.",
+      });
+      return;
+    }
+
+    saveRecentSearch(searchQuery);
+    navigate(`/search?q=${encodeURIComponent(searchQuery.trim())}`);
+    setShowSearchResults(false);
+    setIsMobileSearchOpen(false);
+  }, [searchQuery, saveRecentSearch, navigate, toast]);
+
+  // Handle product click
+  const handleProductClick = useCallback((productId) => {
+    navigate(`/product/${productId}`);
+    setShowSearchResults(false);
+    setIsMobileSearchOpen(false);
+    setSearchQuery("");
+  }, [navigate]);
+
+  // Handle recent search click
+  const handleRecentSearchClick = useCallback((query) => {
+    setSearchQuery(query);
+    performSearch(query);
+  }, [performSearch]);
+
+  // Helper function to highlight matched text
+  const highlightMatches = useCallback((text, matches) => {
+    if (!matches || matches.length === 0 || !text) return text;
+
+    // Find matches for the current field
+    const fieldMatches = matches.filter(
+      (match) =>
+        match.key === "Product_name" ||
+        match.key === "Product_category.category"
+    );
+
+    if (fieldMatches.length === 0) return text;
+
+    // Simple highlighting
+    let highlightedText = text;
+    fieldMatches.forEach((match) => {
+      match.indices.forEach(([start, end]) => {
+        const matchedText = text.slice(start, end + 1);
+        highlightedText = highlightedText.replace(
+          matchedText,
+          `<mark class="bg-yellow-200 px-1 rounded">${matchedText}</mark>`
+        );
+      });
+    });
+
+    return highlightedText;
+  }, []);
+
+  // Handle logout
+  const handleLogout = useCallback(() => {
+    logout();
+    toast({
+      title: "Logged out successfully",
+      description: "Come back soon!",
+      variant: "default",
+    });
+    navigate("/");
+    setIsProfileMenuOpen(false);
+  }, [logout , toast, navigate]);
+
+  // Click outside handler and scroll handler
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      if (
+        profileMenuRef.current &&
+        !profileMenuRef.current.contains(event.target)
+      ) {
+        setIsProfileMenuOpen(false);
+      }
+      if (
+        mobileSearchRef.current &&
+        !mobileSearchRef.current.contains(event.target)
+      ) {
+        setIsMobileSearchOpen(false);
+      }
+      if (
+        searchResultsRef.current &&
+        !searchResultsRef.current.contains(event.target)
+      ) {
+        setShowSearchResults(false);
+      }
+    };
+
     const handleScroll = () => {
       const currentScrollY = window.scrollY;
-      setShowNavbar(currentScrollY <= lastScrollY.current || currentScrollY <= 60);
+      setShowNavbar(
+        currentScrollY <= lastScrollY.current || currentScrollY <= 60
+      );
       lastScrollY.current = currentScrollY;
     };
 
-    const handleClickOutside = (event) => {
-      if (profileMenuRef.current && !profileMenuRef.current.contains(event.target)) {
-        setIsProfileMenuOpen(false);
-      }
-      if (mobileSearchRef.current && !mobileSearchRef.current.contains(event.target)) {
-        setIsMobileSearchOpen(false);
-      }
-    };
-
-    window.addEventListener("scroll", handleScroll);
-    if (isProfileMenuOpen || isMobileSearchOpen) {
+    window.addEventListener("scroll", handleScroll, { passive: true });
+    if (isProfileMenuOpen || isMobileSearchOpen || showSearchResults) {
       document.addEventListener("mousedown", handleClickOutside);
     }
 
@@ -441,68 +335,7 @@ const Header = () => {
       window.removeEventListener("scroll", handleScroll);
       document.removeEventListener("mousedown", handleClickOutside);
     };
-  }, [isProfileMenuOpen, isMobileSearchOpen]);
-
-  const handleSearch = (e) => {
-    e.preventDefault();
-    if (!searchQuery.trim()) {
-      toast({ title: "Empty search", description: "Please enter a keyword to search." });
-      return;
-    }
-
-    // You can customize this search logic based on your products
-    const searchCategories = ["ring", "bracelet", "necklace", "bangle", "mangalsutra", "earrings", "pendant"];
-    const match = searchCategories.filter(item =>
-      item.toLowerCase().includes(searchQuery.toLowerCase())
-    );
-    
-    if (match.length === 0) {
-      toast({ title: "No results", description: "Try searching something else." });
-    } else {
-      navigate(`/search?q=${encodeURIComponent(searchQuery.trim())}`);
-    }
-    
-    setSuggestions([]);
-  };
-
-  const handleLogout = () => {
-    logout();
-    clearCart();
-    clearWishlist();
-    toast({ 
-      title: "Logged out successfully", 
-      description: "Come back soon!",
-      variant: "default"
-    });
-    navigate("/");
-    setIsProfileMenuOpen(false);
-  };
-
-  useEffect(() => {
-    if (searchQuery.trim()) {
-      // Dynamic suggestions based on search query
-      const allSuggestions = [
-        "Gold Ring", "Silver Bracelet", "Diamond Necklace", "Traditional Bangle", 
-        "Mangalsutra", "Pearl Earrings", "Ruby Pendant", "Platinum Ring",
-        "Antique Jewelry", "Bridal Collection", "Wedding Rings", "Chain",
-        "Anklet", "Nose Pin", "Toe Ring", "Armlet"
-      ];
-      
-      const filteredSuggestions = allSuggestions.filter(item =>
-        item.toLowerCase().includes(searchQuery.toLowerCase())
-      ).slice(0, 5); // Limit to 5 suggestions
-      
-      setSuggestions(filteredSuggestions);
-    } else {
-      setSuggestions([]);
-    }
-  }, [searchQuery]);
-
-  const handleSuggestionClick = (suggestion) => {
-    setSearchQuery(suggestion);
-    setSuggestions([]);
-    navigate(`/search?q=${encodeURIComponent(suggestion)}`);
-  };
+  }, [isProfileMenuOpen, isMobileSearchOpen, showSearchResults]);
 
   return (
     <>
@@ -514,55 +347,176 @@ const Header = () => {
       >
         <div className="container mx-auto px-4">
           <div className="flex items-center justify-between py-3 gap-4">
-            
             {/* Logo */}
-            <div 
-              className="flex items-center cursor-pointer flex-shrink-0" 
+            <div
+              className="flex items-center cursor-pointer flex-shrink-0"
               onClick={() => navigate("/")}
-            > 
+            >
               <h1 className="text-xl md:text-2xl font-bold text-gray-900 tracking-tight">
                 <span className="text-purple-600">Anokhi</span>{" "}
                 <span className="text-gray-600">अदा</span>
               </h1>
             </div>
 
-            {/* Desktop Search Bar */}
-            <div className="hidden md:flex flex-1 max-w-2xl mx-4">
+            {/* Enhanced Desktop Search Bar with Fuzzy Search */}
+            <div
+              className="hidden md:flex flex-1 max-w-2xl mx-4 relative"
+              ref={searchResultsRef}
+            >
               <div className="w-full relative">
-                <Search className="absolute left-4 top-1/2 transform -translate-y-1/2 text-gray-400" size={20} />
+                <Search
+                  className="absolute left-4 top-1/2 transform -translate-y-1/2 text-gray-400 z-10"
+                  size={20}
+                />
                 <input
                   type="text"
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
-                  onKeyDown={(e) => e.key === 'Enter' && handleSearch(e)}
-                  placeholder="Search for jewelry, collections..."
+                  onKeyDown={(e) => e.key === "Enter" && handleSearch(e)}
+                  onFocus={() => searchQuery && setShowSearchResults(true)}
+                  placeholder="Search for jewelry, collections... (fuzzy search enabled)"
                   className="w-full pl-12 pr-4 py-3 bg-gray-50 border border-gray-200 rounded-full focus:ring-2 focus:ring-purple-500 focus:border-transparent focus:bg-white transition-all duration-200 text-sm"
+                  aria-label="Search products"
+                  aria-expanded={showSearchResults}
+                  aria-haspopup="listbox"
+                  role="combobox"
                 />
-                {suggestions.length > 0 && (
-                  <ul className="absolute mt-1 bg-white border border-gray-200 rounded-md w-full z-50 shadow-lg">
-                    {suggestions.map((sug, i) => (
-                      <li
-                        key={i}
-                        onClick={() => handleSuggestionClick(sug)}
-                        className="px-4 py-2 text-sm hover:bg-gray-100 cursor-pointer first:rounded-t-md last:rounded-b-md"
-                      >
-                        <Search className="inline mr-2" size={14} />
-                        {sug}
-                      </li>
-                    ))}
-                  </ul>
-                )}
+
+                {/* Enhanced Search Results Dropdown with Fuzzy Matching */}
+                <AnimatePresence>
+                  {showSearchResults && (
+                    <motion.div
+                      initial={{ opacity: 0, y: 10 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      exit={{ opacity: 0, y: 10 }}
+                      className="absolute mt-2 bg-white border border-gray-200 rounded-xl w-full z-50 shadow-2xl max-h-96 overflow-hidden"
+                      role="listbox"
+                    >
+                      {isSearching ? (
+                        <div className="p-4 text-center">
+                          <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-purple-500 mx-auto"></div>
+                          <p className="text-sm text-gray-500 mt-2">
+                            Searching...
+                          </p>
+                        </div>
+                      ) : (
+                        <div className="max-h-96 overflow-y-auto">
+                          {/* Recent Searches */}
+                          {!searchQuery && recentSearches.length > 0 && (
+                            <div className="p-3 border-b border-gray-100">
+                              <h4 className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-2 flex items-center">
+                                <Clock size={12} className="mr-1" />
+                                Recent Searches
+                              </h4>
+                              {recentSearches.map((recent, i) => (
+                                <button
+                                  key={i}
+                                  onClick={() =>
+                                    handleRecentSearchClick(recent)
+                                  }
+                                  className="block w-full text-left px-2 py-1 text-sm text-gray-600 hover:text-purple-600 hover:bg-purple-50 rounded transition-colors"
+                                  role="option"
+                                >
+                                  <Search className="inline mr-2" size={12} />
+                                  {recent}
+                                </button>
+                              ))}
+                            </div>
+                          )}
+
+                          {/* Fuzzy Search Results */}
+                          {searchResults.length > 0 ? (
+                            <div className="p-2">
+                              <h4 className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-2 px-2 flex items-center">
+                                <TrendingUp size={12} className="mr-1" />
+                                Products ({searchResults.length}) - Fuzzy
+                                matched
+                              </h4>
+                              {searchResults.map((product) => (
+                                <button
+                                  key={product._id}
+                                  onClick={() =>
+                                    handleProductClick(product._id)
+                                  }
+                                  className="w-full p-3 hover:bg-purple-50 cursor-pointer rounded-lg transition-colors flex items-center space-x-3"
+                                  role="option"
+                                >
+                                  <div className="w-12 h-12 flex-shrink-0">
+                                    <img
+                                      src={
+                                        product.Product_image?.[0] ||
+                                        "/api/placeholder/48/48"
+                                      }
+                                      alt={product.Product_name}
+                                      className="w-full h-full object-cover rounded-lg"
+                                      onError={(e) => {
+                                        e.currentTarget.src = "/api/placeholder/48/48";
+                                      }}
+                                    />
+                                  </div>
+                                  <div className="flex-1 text-left min-w-0">
+                                    <h4
+                                      className="font-semibold text-gray-900 truncate text-sm"
+                                      dangerouslySetInnerHTML={{
+                                        __html: highlightMatches(
+                                          product.Product_name,
+                                          product.matches
+                                        ),
+                                      }}
+                                    />
+                                    <p className="text-purple-600 font-medium text-sm">
+                                      ₹{product.Product_price?.toLocaleString()}
+                                    </p>
+                                    <p className="text-xs text-gray-500">
+                                      {product.Product_category?.category}
+                                    </p>
+                                    {product.score && (
+                                      <p className="text-xs text-gray-400">
+                                        Match:{" "}
+                                        {Math.round((1 - product.score) * 100)}%
+                                      </p>
+                                    )}
+                                  </div>
+                                  {product.Product_available && (
+                                    <div className="w-2 h-2 bg-green-400 rounded-full flex-shrink-0"></div>
+                                  )}
+                                </button>
+                              ))}
+
+                              <button
+                                onClick={handleSearch}
+                                className="w-full p-3 text-center text-purple-600 font-medium hover:bg-purple-50 rounded-lg transition-colors border-t border-gray-100 mt-2"
+                              >
+                                View all results for "{searchQuery}"
+                              </button>
+                            </div>
+                          ) : searchQuery && !isSearching ? (
+                            <div className="p-6 text-center">
+                              <Search className="mx-auto h-8 w-8 text-gray-400 mb-2" />
+                              <p className="text-sm text-gray-500">
+                                No products found for "{searchQuery}"
+                              </p>
+                              <p className="text-xs text-gray-400 mt-1">
+                                Try different keywords or check spelling
+                              </p>
+                            </div>
+                          ) : null}
+                        </div>
+                      )}
+                    </motion.div>
+                  )}
+                </AnimatePresence>
               </div>
             </div>
 
             {/* Right Actions */}
             <div className="flex items-center gap-2 md:gap-3">
-              
               {/* Mobile Search Button */}
-              <button 
+              <button
                 className="md:hidden p-2 text-gray-600 hover:text-purple-600 transition-colors"
                 onClick={() => setIsMobileSearchOpen(!isMobileSearchOpen)}
                 title="Search"
+                aria-label="Toggle search"
               >
                 <Search size={20} />
               </button>
@@ -570,28 +524,28 @@ const Header = () => {
               {/* Admin Button - Desktop/Tablet */}
               {user?.role === "admin" && (
                 <div className="relative group hidden sm:flex">
-                  <button 
+                  <button
                     className="px-3 py-2 bg-gradient-to-r from-purple-600 to-purple-700 text-white text-sm font-medium rounded-lg hover:from-purple-700 hover:to-purple-800 transition-all"
                     onClick={() => navigate("/admin")}
                   >
-                    <LayoutDashboard size={18} className="inline-block mr-1" /> 
+                    <LayoutDashboard size={18} className="inline-block mr-1" />
                     Admin
                   </button>
                   <div className="absolute top-full mt-2 w-40 bg-white border border-gray-200 shadow-md rounded-md opacity-0 group-hover:opacity-100 transition-all duration-200 pointer-events-none group-hover:pointer-events-auto z-50">
-                    <button 
-                      onClick={() => navigate("/admin")} 
+                    <button
+                      onClick={() => navigate("/admin")}
                       className="w-full text-left px-4 py-2 text-sm hover:bg-gray-100 rounded-t-md"
                     >
                       Dashboard
                     </button>
-                    <button 
-                      onClick={() => navigate("/admin/products")} 
+                    <button
+                      onClick={() => navigate("/admin/products")}
                       className="w-full text-left px-4 py-2 text-sm hover:bg-gray-100"
                     >
                       Manage Products
                     </button>
-                    <button 
-                      onClick={() => navigate("/admin/orders")} 
+                    <button
+                      onClick={() => navigate("/admin/orders")}
                       className="w-full text-left px-4 py-2 text-sm hover:bg-gray-100 rounded-b-md"
                     >
                       Manage Orders
@@ -600,21 +554,32 @@ const Header = () => {
                 </div>
               )}
 
-              {/* Wishlist */}
-              <button 
-                className="p-2 text-gray-600 hover:text-purple-600 transition-colors relative" 
+              {/* Wishlist with Quantity Badge */}
+              <button
+                className="p-2 text-gray-600 hover:text-purple-600 transition-colors relative"
                 onClick={() => navigate("/wishlist")}
-                title="Wishlist"
-              > 
+                title={`Wishlist (${uniqueWishlistItems} items${
+                  totalWishlistItems !== uniqueWishlistItems
+                    ? `, ${totalWishlistItems} total`
+                    : ""
+                })`}
+                aria-label={`Wishlist with ${totalWishlistItems} items`}
+              >
                 <Heart size={20} />
+                {totalWishlistItems > 0 && (
+                  <span className="absolute -top-1 -right-1 inline-flex items-center justify-center w-5 h-5 text-xs font-bold text-white bg-pink-500 rounded-full">
+                    {totalWishlistItems}
+                  </span>
+                )}
               </button>
-              
-              {/* Cart */}
-              <button 
-                className="p-2 text-gray-600 hover:text-purple-600 transition-colors relative" 
+
+              {/* Cart with Quantity Badge */}
+              <button
+                className="p-2 text-gray-600 hover:text-purple-600 transition-colors relative"
                 onClick={() => navigate("/cart")}
                 title="Shopping Cart"
-              > 
+                aria-label={`Shopping cart with ${totalQuantity} items`}
+              >
                 <ShoppingCart size={20} />
                 {totalQuantity > 0 && (
                   <span className="absolute -top-1 -right-1 inline-flex items-center justify-center w-5 h-5 text-xs font-bold text-white bg-red-500 rounded-full">
@@ -627,14 +592,14 @@ const Header = () => {
               <div className="hidden md:flex items-center">
                 {!isAuthenticated ? (
                   <div className="flex gap-2">
-                    <button 
-                      onClick={() => navigate("/login")} 
+                    <button
+                      onClick={() => navigate("/login")}
                       className="px-4 py-2 text-gray-700 hover:text-purple-600 transition-colors text-sm font-medium"
                     >
                       Sign In
                     </button>
-                    <button 
-                      onClick={() => navigate("/signup")} 
+                    <button
+                      onClick={() => navigate("/signup")}
                       className="px-4 py-2 bg-gradient-to-r from-purple-600 to-purple-700 text-white text-sm font-medium rounded-lg hover:from-purple-700 hover:to-purple-800 transition-all"
                     >
                       Sign Up
@@ -642,50 +607,62 @@ const Header = () => {
                   </div>
                 ) : (
                   <div className="relative" ref={profileMenuRef}>
-                    <button 
-                      className="p-2 text-gray-600 hover:text-purple-600 transition-colors" 
-                      onClick={() => setIsProfileMenuOpen(!isProfileMenuOpen)} 
+                    <button
+                      className="p-2 text-gray-600 hover:text-purple-600 transition-colors"
+                      onClick={() => setIsProfileMenuOpen(!isProfileMenuOpen)}
                       title={user.firstName || user.email}
+                      aria-label="User menu"
                     >
                       <User size={20} />
                     </button>
 
                     <AnimatePresence>
                       {isProfileMenuOpen && (
-                        <motion.div 
-                          initial={{ opacity: 0, y: 10 }} 
-                          animate={{ opacity: 1, y: 0 }} 
-                          exit={{ opacity: 0, y: 10 }} 
+                        <motion.div
+                          initial={{ opacity: 0, y: 10 }}
+                          animate={{ opacity: 1, y: 0 }}
+                          exit={{ opacity: 0, y: 10 }}
                           className="absolute right-0 mt-2 w-48 bg-white border border-gray-200 rounded-lg shadow-xl z-50 overflow-hidden"
                         >
                           <div className="px-4 py-3 border-b border-gray-100">
                             <p className="text-sm font-medium text-gray-900">
                               {user.firstName || user.email}
                             </p>
-                            <p className="text-xs text-gray-500">{user.email}</p>
+                            <p className="text-xs text-gray-500">
+                              {user.email}
+                            </p>
                           </div>
-                          <button 
-                            onClick={() => { navigate("/profile"); setIsProfileMenuOpen(false); }} 
+                          <button
+                            onClick={() => {
+                              navigate("/profile");
+                              setIsProfileMenuOpen(false);
+                            }}
                             className="w-full text-left px-4 py-3 text-sm text-gray-700 hover:bg-gray-50 transition-colors"
                           >
                             My Profile
                           </button>
-                          <button 
-                            onClick={() => { navigate("/orders"); setIsProfileMenuOpen(false); }} 
+                          <button
+                            onClick={() => {
+                              navigate("/orders");
+                              setIsProfileMenuOpen(false);
+                            }}
                             className="w-full text-left px-4 py-3 text-sm text-gray-700 hover:bg-gray-50 transition-colors"
                           >
                             My Orders
                           </button>
                           {user?.role === "admin" && (
-                            <button 
-                              onClick={() => { navigate("/admin"); setIsProfileMenuOpen(false); }} 
+                            <button
+                              onClick={() => {
+                                navigate("/admin");
+                                setIsProfileMenuOpen(false);
+                              }}
                               className="w-full text-left px-4 py-3 text-sm text-purple-600 hover:bg-purple-50 transition-colors border-t border-gray-100"
                             >
                               Admin Panel
                             </button>
                           )}
-                          <button 
-                            onClick={handleLogout} 
+                          <button
+                            onClick={handleLogout}
                             className="w-full text-left px-4 py-3 text-sm text-red-600 hover:bg-red-50 transition-colors border-t border-gray-100"
                           >
                             Logout
@@ -698,9 +675,10 @@ const Header = () => {
               </div>
 
               {/* Mobile Menu Button */}
-              <button 
-                className="md:hidden p-2 text-gray-600 hover:text-purple-600 transition-colors" 
+              <button
+                className="md:hidden p-2 text-gray-600 hover:text-purple-600 transition-colors"
                 onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
+                aria-label="Toggle mobile menu"
               >
                 {isMobileMenuOpen ? <X size={20} /> : <Menu size={20} />}
               </button>
@@ -709,7 +687,7 @@ const Header = () => {
         </div>
       </motion.header>
 
-      {/* Mobile Search Bar - Toggleable */}
+      {/* Enhanced Mobile Search Bar */}
       <AnimatePresence>
         {isMobileSearchOpen && (
           <motion.div
@@ -721,15 +699,17 @@ const Header = () => {
           >
             <div className="px-4 py-3">
               <div className="relative">
-                <Search className="absolute left-4 top-1/2 transform -translate-y-1/2 text-gray-400" size={18} />
+                <Search
+                  className="absolute left-4 top-1/2 transform -translate-y-1/2 text-gray-400"
+                  size={18}
+                />
                 <input
                   type="text"
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
                   onKeyDown={(e) => {
-                    if (e.key === 'Enter') {
+                    if (e.key === "Enter") {
                       handleSearch(e);
-                      setIsMobileSearchOpen(false);
                     }
                   }}
                   placeholder="Search jewelry..."
@@ -742,24 +722,59 @@ const Header = () => {
                 >
                   <X size={16} />
                 </button>
-                {suggestions.length > 0 && (
-                  <ul className="absolute mt-1 bg-white border border-gray-200 rounded-md w-full z-50 shadow-lg">
-                    {suggestions.map((sug, i) => (
-                      <li
-                        key={i}
-                        onClick={() => {
-                          handleSuggestionClick(sug);
-                          setIsMobileSearchOpen(false);
-                        }}
-                        className="px-4 py-2 text-sm hover:bg-gray-100 cursor-pointer first:rounded-t-md last:rounded-b-md"
-                      >
-                        <Search className="inline mr-2" size={14} />
-                        {sug}
-                      </li>
-                    ))}
-                  </ul>
-                )}
               </div>
+
+              {/* Mobile Search Results */}
+              {(searchResults.length > 0 || recentSearches.length > 0) && (
+                <div className="mt-3 bg-gray-50 rounded-lg max-h-64 overflow-y-auto">
+                  {!searchQuery && recentSearches.length > 0 && (
+                    <div className="p-3">
+                      <h4 className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-2">
+                        Recent
+                      </h4>
+                      {recentSearches.map((recent, i) => (
+                        <button
+                          key={i}
+                          onClick={() => handleRecentSearchClick(recent)}
+                          className="block w-full text-left px-2 py-1.5 text-sm text-gray-600 hover:text-purple-600 rounded"
+                        >
+                          <Clock className="inline mr-2" size={12} />
+                          {recent}
+                        </button>
+                      ))}
+                    </div>
+                  )}
+
+                  {searchResults.length > 0 && (
+                    <div className="p-2">
+                      {searchResults.slice(0, 4).map((product) => (
+                        <button
+                          key={product._id}
+                          onClick={() => handleProductClick(product._id)}
+                          className="w-full p-2 hover:bg-white cursor-pointer rounded flex items-center space-x-3"
+                        >
+                          <img
+                            src={product.Product_image?.[0] || "/api/placeholder/40/40"}
+                            alt={product.Product_name}
+                            className="w-10 h-10 object-cover rounded"
+                            onError={(e) => {
+                              e.currentTarget.src = "/api/placeholder/40/40";
+                            }}
+                          />
+                          <div className="flex-1 text-left min-w-0">
+                            <h4 className="font-medium text-gray-900 truncate text-sm">
+                              {product.Product_name}
+                            </h4>
+                            <p className="text-purple-600 text-sm">
+                              ₹{product.Product_price?.toLocaleString()}
+                            </p>
+                          </div>
+                        </button>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              )}
             </div>
           </motion.div>
         )}
@@ -773,41 +788,55 @@ const Header = () => {
             animate={{ opacity: 1, height: "auto" }}
             exit={{ opacity: 0, height: 0 }}
             className={`fixed inset-x-0 bg-white z-40 shadow-lg border-b border-gray-200 md:hidden ${
-              isMobileSearchOpen ? 'top-[76px]' : 'top-16'
+              isMobileSearchOpen ? "top-[76px]" : "top-16"
             }`}
           >
             <div className="container mx-auto px-4 py-4">
               <div className="flex flex-col space-y-3">
-                
                 {/* Navigation Links */}
                 <div className="space-y-1">
-                  <button 
-                    onClick={() => { navigate('/'); setIsMobileMenuOpen(false); }}
+                  <button
+                    onClick={() => {
+                      navigate("/");
+                      setIsMobileMenuOpen(false);
+                    }}
                     className="block w-full text-left py-3 px-4 text-gray-700 hover:bg-gray-50 rounded-lg font-medium transition-colors"
                   >
                     Home
                   </button>
                 </div>
-                
+
                 {/* Admin Section for Mobile */}
                 {user?.role === "admin" && (
                   <div className="pt-2 border-t border-gray-200">
                     <div className="space-y-1">
-                      <button 
-                        onClick={() => { navigate('/admin'); setIsMobileMenuOpen(false); }}
+                      <button
+                        onClick={() => {
+                          navigate("/admin");
+                          setIsMobileMenuOpen(false);
+                        }}
                         className="block w-full text-left py-3 px-4 text-purple-600 hover:bg-purple-50 rounded-lg font-medium transition-colors"
                       >
-                        <LayoutDashboard size={18} className="inline-block mr-2" />
+                        <LayoutDashboard
+                          size={18}
+                          className="inline-block mr-2"
+                        />
                         Admin Dashboard
                       </button>
-                      <button 
-                        onClick={() => { navigate('/admin/products'); setIsMobileMenuOpen(false); }}
+                      <button
+                        onClick={() => {
+                          navigate("/admin/products");
+                          setIsMobileMenuOpen(false);
+                        }}
                         className="block w-full text-left py-3 px-4 text-gray-700 hover:bg-gray-50 rounded-lg transition-colors"
                       >
                         Manage Products
                       </button>
-                      <button 
-                        onClick={() => { navigate('/admin/orders'); setIsMobileMenuOpen(false); }}
+                      <button
+                        onClick={() => {
+                          navigate("/admin/orders");
+                          setIsMobileMenuOpen(false);
+                        }}
                         className="block w-full text-left py-3 px-4 text-gray-700 hover:bg-gray-50 rounded-lg transition-colors"
                       >
                         Manage Orders
@@ -815,19 +844,25 @@ const Header = () => {
                     </div>
                   </div>
                 )}
-                
+
                 {/* Authentication Section */}
                 <div className="pt-4 border-t border-gray-200">
                   {!isAuthenticated ? (
                     <div className="flex flex-col gap-3">
                       <button
-                        onClick={() => { navigate("/login"); setIsMobileMenuOpen(false); }}
+                        onClick={() => {
+                          navigate("/login");
+                          setIsMobileMenuOpen(false);
+                        }}
                         className="w-full py-3 border border-gray-300 text-gray-700 rounded-lg font-medium hover:bg-gray-50 transition-colors"
                       >
                         Sign In
                       </button>
                       <button
-                        onClick={() => { navigate("/signup"); setIsMobileMenuOpen(false); }}
+                        onClick={() => {
+                          navigate("/signup");
+                          setIsMobileMenuOpen(false);
+                        }}
                         className="w-full py-3 bg-gradient-to-r from-purple-600 to-purple-700 text-white rounded-lg font-medium hover:from-purple-700 hover:to-purple-800 transition-all"
                       >
                         Create Account
@@ -842,21 +877,27 @@ const Header = () => {
                         <p className="text-xs text-gray-500">{user.email}</p>
                       </div>
                       <button
-                        onClick={() => { navigate("/profile"); setIsMobileMenuOpen(false); }}
+                        onClick={() => {
+                          navigate("/profile");
+                          setIsMobileMenuOpen(false);
+                        }}
                         className="w-full text-left py-3 px-4 text-gray-700 hover:bg-gray-50 rounded-lg transition-colors"
                       >
                         My Profile
                       </button>
                       <button
-                        onClick={() => { navigate("/orders"); setIsMobileMenuOpen(false); }}
+                        onClick={() => {
+                          navigate("/orders");
+                          setIsMobileMenuOpen(false);
+                        }}
                         className="w-full text-left py-3 px-4 text-gray-700 hover:bg-gray-50 rounded-lg transition-colors"
                       >
                         My Orders
                       </button>
                       <button
-                        onClick={() => { 
-                          handleLogout(); 
-                          setIsMobileMenuOpen(false); 
+                        onClick={() => {
+                          handleLogout();
+                          setIsMobileMenuOpen(false);
                         }}
                         className="w-full text-left py-3 px-4 text-red-600 hover:bg-red-50 rounded-lg transition-colors"
                       >
@@ -875,5 +916,3 @@ const Header = () => {
 };
 
 export default Header;
-
-
