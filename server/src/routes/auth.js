@@ -279,5 +279,22 @@ authRouter.get("/debug", (req, res) => {
   });
 });
 
+authRouter.get("/user/profile", userMiddleware, async (req, res) => {
+  const UserId =  req.user._id;
+
+  try {
+  //  const user = await User.findById(UserId)
+   console.log(req.user);
+   res.send(req.user);
+
+  //  res.send(user);
+  }
+  catch (error) {
+    console.error("Error fetching user profile:", error);
+    return res.status(500).json({ message: "Internal server error" });
+  }
+
+})
+
 module.exports = authRouter;
 

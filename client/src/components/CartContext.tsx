@@ -667,7 +667,7 @@ interface CartContextType {
 
 const CartContext = createContext<CartContextType | undefined>(undefined);
 
-// Helper functions remain the same
+// Helper functions
 const getStoredCart = (): Product[] => {
   try {
     if (typeof window !== "undefined") {
@@ -698,21 +698,26 @@ const extractPrice = (price: any): number => {
   return isNaN(numeric) ? 0 : numeric;
 };
 
-const convertBackendItemToProduct = (item: BackendCartItem): Product => {
+// ✅ FIXED: Simplified conversion for normal products only
+const convertBackendItemToProduct = (item: BackendCartItem): Product | null => {
+  // Add defensive checks for null/undefined productId
+  if (!item.productId || !item.productId._id) {
+    console.warn('Invalid cart item - missing productId:', item);
+    return null; // This will be filtered out
+  }
+
   return {
-    id: item.productId._id
-      ? parseInt(item.productId._id, 16) % 1000000
-      : Math.random() * 1000000,
+    id: parseInt(item.productId._id.slice(-6), 16) % 1000000,
     _id: item.productId._id,
-    name: item.productId.Product_name,
-    Product_name: item.productId.Product_name,
+    name: item.productId.Product_name || 'Unknown Product',
+    Product_name: item.productId.Product_name || 'Unknown Product',
     price: item.productId.Product_price?.toString() || "0",
-    Product_price: item.productId.Product_price,
+    Product_price: item.productId.Product_price || 0,
     originalPrice: item.productId.Product_price?.toString() || "0",
     image: item.productId.Product_image?.[0] || "",
-    Product_image: item.productId.Product_image,
+    Product_image: item.productId.Product_image || [],
     isNew: false,
-    quantity: item.quantity,
+    quantity: item.quantity || 1,
   };
 };
 
@@ -802,6 +807,7 @@ export const CartProvider = ({ children }: { children: ReactNode }) => {
     }
   };
 
+  // ✅ FIXED: Complete loadCartFromBackend function
   const loadCartFromBackend = async () => {
     if (!user || !user.token) return;
 
@@ -820,12 +826,25 @@ export const CartProvider = ({ children }: { children: ReactNode }) => {
       }
 
       const data = await response.json();
+      console.log("🔍 Backend response:", data);
 
       if (data.cart && Array.isArray(data.cart)) {
-        const frontendCart = data.cart.map(convertBackendItemToProduct);
+        // ✅ DEFENSIVE: Convert items and filter out null results
+        const frontendCart = data.cart
+          .map(item => {
+            try {
+              return convertBackendItemToProduct(item);
+            } catch (error) {
+              console.warn('Failed to convert cart item:', item, error);
+              return null;
+            }
+          })
+          .filter(Boolean); // Remove null items
+
         console.log("Loaded cart from backend:", frontendCart.length, "items");
         setCart(frontendCart);
       } else {
+        console.log("No cart items found or invalid cart structure");
         setCart([]);
       }
     } catch (error) {
@@ -867,7 +886,17 @@ export const CartProvider = ({ children }: { children: ReactNode }) => {
       if (syncResponse.ok) {
         const syncData = await syncResponse.json();
         if (syncData.cart) {
-          const finalCart = syncData.cart.map(convertBackendItemToProduct);
+          const finalCart = syncData.cart
+            .map(item => {
+              try {
+                return convertBackendItemToProduct(item);
+              } catch (error) {
+                console.warn('Failed to convert synced cart item:', item, error);
+                return null;
+              }
+            })
+            .filter(Boolean);
+          
           setCart(finalCart);
 
           // Clear localStorage after successful sync
@@ -896,7 +925,7 @@ export const CartProvider = ({ children }: { children: ReactNode }) => {
     }
   }, [cart, initialized, isAuthenticated, hasLoggedOut]);
 
-  // Rest of your functions remain the same...
+  // ✅ SIMPLIFIED: Add to cart (normal products only)
   const addToCart = async (product: Product) => {
     if (!product || !product.price || !(product.id || product._id)) {
       toast({
@@ -910,11 +939,11 @@ export const CartProvider = ({ children }: { children: ReactNode }) => {
     setLoading(true);
     try {
       if (isAuthenticated && user && user.token && !hasLoggedOut) {
+        const backendProductId = product._id || product.id;
 
-          const backendProductId = product._id || product.id;
-  
-  console.log('🔍 Adding to backend with ID:', backendProductId);
-        // Add to backend
+        console.log("🔍 Adding normal product to cart:", backendProductId);
+
+        // ✅ SIMPLIFIED: Only send productId and quantity for normal products
         const response = await fetch(`${API_URL}/cart/add`, {
           method: "POST",
           headers: {
@@ -928,12 +957,23 @@ export const CartProvider = ({ children }: { children: ReactNode }) => {
         });
 
         if (!response.ok) {
-          throw new Error(`HTTP error! status: ${response.status}`);
+          const errorData = await response.json().catch(() => ({ message: 'Unknown error' }));
+          throw new Error(`HTTP error! status: ${response.status} - ${errorData.message || 'Unknown error'}`);
         }
 
         const data = await response.json();
         if (data.cart) {
-          const frontendCart = data.cart.map(convertBackendItemToProduct);
+          const frontendCart = data.cart
+            .map(item => {
+              try {
+                return convertBackendItemToProduct(item);
+              } catch (error) {
+                console.warn('Failed to convert cart item after add:', item, error);
+                return null;
+              }
+            })
+            .filter(Boolean);
+          
           setCart(frontendCart);
         }
       } else {
@@ -963,7 +1003,7 @@ export const CartProvider = ({ children }: { children: ReactNode }) => {
       console.error("Error adding to cart:", error);
       toast({
         title: "Error",
-        description: "Failed to add item to cart",
+        description: `Failed to add item to cart: ${error.message}`,
         variant: "destructive",
       });
     } finally {
@@ -972,57 +1012,70 @@ export const CartProvider = ({ children }: { children: ReactNode }) => {
   };
 
   const removeCart = async (productId: number | string) => {
-  setLoading(true);
-  try {
-    if (isAuthenticated && user && user.token && !hasLoggedOut) {
-      // ✅ FIXED: Use MongoDB _id for backend requests
-      const product = cart.find(p => p.id == productId || p._id == productId);
-      const backendProductId = product?._id || productId;
-      
-      console.log('🔍 Removing product - Frontend ID:', productId);
-      console.log('🔍 Removing product - Backend ID:', backendProductId);
-      
-      // ❌ You were still using productId here, should use backendProductId
-      const response = await fetch(`${API_URL}/cart/remove/${backendProductId}`, {
-        method: "DELETE",
-        headers: {
-          Authorization: `Bearer ${user.token}`,
-          "Content-Type": "application/json",
-        },
+    setLoading(true);
+    try {
+      if (isAuthenticated && user && user.token && !hasLoggedOut) {
+        // ✅ FIXED: Use MongoDB _id for backend requests
+        const product = cart.find(
+          (p) => p.id == productId || p._id == productId
+        );
+        const backendProductId = product?._id || productId;
+
+        console.log("🔍 Removing product - Frontend ID:", productId);
+        console.log("🔍 Removing product - Backend ID:", backendProductId);
+
+        const response = await fetch(
+          `${API_URL}/cart/remove/${backendProductId}`,
+          {
+            method: "DELETE",
+            headers: {
+              Authorization: `Bearer ${user.token}`,
+              "Content-Type": "application/json",
+            },
+          }
+        );
+
+        if (!response.ok) {
+          throw new Error(`HTTP error! status: ${response.status}`);
+        }
+
+        const data = await response.json();
+        if (data.cart) {
+          const frontendCart = data.cart
+            .map(item => {
+              try {
+                return convertBackendItemToProduct(item);
+              } catch (error) {
+                console.warn('Failed to convert cart item after remove:', item, error);
+                return null;
+              }
+            })
+            .filter(Boolean);
+          
+          setCart(frontendCart);
+        }
+      } else {
+        // Remove from localStorage
+        setCart((prevCart) =>
+          prevCart.filter((p) => p.id !== productId && p._id !== productId)
+        );
+      }
+
+      toast({
+        title: "Item removed",
+        description: "Item removed from cart",
       });
-
-      if (!response.ok) {
-        throw new Error(`HTTP error! status: ${response.status}`);
-      }
-
-      const data = await response.json();
-      if (data.cart) {
-        const frontendCart = data.cart.map(convertBackendItemToProduct);
-        setCart(frontendCart);
-      }
-    } else {
-      // Remove from localStorage
-      setCart((prevCart) =>
-        prevCart.filter((p) => p.id !== productId && p._id !== productId)
-      );
+    } catch (error) {
+      console.error("Error removing from cart:", error);
+      toast({
+        title: "Error",
+        description: "Failed to remove item from cart",
+        variant: "destructive",
+      });
+    } finally {
+      setLoading(false);
     }
-
-    toast({
-      title: "Item removed",
-      description: "Item removed from cart",
-    });
-  } catch (error) {
-    console.error("Error removing from cart:", error);
-    toast({
-      title: "Error",
-      description: "Failed to remove item from cart",
-      variant: "destructive",
-    });
-  } finally {
-    setLoading(false);
-  }
-};
-
+  };
 
   const clearCart = async () => {
     setLoading(true);
@@ -1066,40 +1119,46 @@ export const CartProvider = ({ children }: { children: ReactNode }) => {
     productId: number | string,
     quantity: number
   ) => {
-  
     const qty = Math.max(1, Math.floor(quantity));
 
-      console.log("🔍 Attempting to update quantity for product:", productId);
+    console.log("🔍 Attempting to update quantity for product:", productId);
     setLoading(true);
     try {
       if (isAuthenticated && user && user.token && !hasLoggedOut) {
+        // ✅ FIXED: Find the product and use its MongoDB _id
+        const product = cart.find(
+          (p) => p.id == productId || p._id == productId
+        );
 
-         // ✅ FIXED: Find the product and use its MongoDB _id
-      const product = cart.find(p => p.id == productId || p._id == productId);
-      
-      if (!product) {
-        console.error('❌ Product not found in cart:', productId);
-        throw new Error('Product not found in cart');
-      }
+        if (!product) {
+          console.error("❌ Product not found in cart:", productId);
+          throw new Error("Product not found in cart");
+        }
 
-      // Use the MongoDB ObjectId (_id) for backend requests
-      const backendProductId = product._id;
-      
-      console.log('🔍 Frontend ID:', productId);
-      console.log('🔍 Backend ID (_id):', backendProductId);
-      console.log('🔍 Making backend request to:', `${API_URL}/cart/update/${backendProductId}`);
+        // Use the MongoDB ObjectId (_id) for backend requests
+        const backendProductId = product._id;
+
+        console.log("🔍 Frontend ID:", productId);
+        console.log("🔍 Backend ID (_id):", backendProductId);
+        console.log(
+          "🔍 Making backend request to:",
+          `${API_URL}/cart/update/${backendProductId}`
+        );
 
         // Update in backend
-        const response = await fetch(`${API_URL}/cart/update/${backendProductId}`, {
-          method: "PUT",
-          headers: {
-            Authorization: `Bearer ${user.token}`,
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify({ quantity: qty }),
-        });
+        const response = await fetch(
+          `${API_URL}/cart/update/${backendProductId}`,
+          {
+            method: "PUT",
+            headers: {
+              Authorization: `Bearer ${user.token}`,
+              "Content-Type": "application/json",
+            },
+            body: JSON.stringify({ quantity: qty }),
+          }
+        );
 
-        console.log('🔍 Response status:', response.status);
+        console.log("🔍 Response status:", response.status);
 
         if (!response.ok) {
           throw new Error(`HTTP error! status: ${response.status}`);
@@ -1107,7 +1166,17 @@ export const CartProvider = ({ children }: { children: ReactNode }) => {
 
         const data = await response.json();
         if (data.cart) {
-          const frontendCart = data.cart.map(convertBackendItemToProduct);
+          const frontendCart = data.cart
+            .map(item => {
+              try {
+                return convertBackendItemToProduct(item);
+              } catch (error) {
+                console.warn('Failed to convert cart item after update:', item, error);
+                return null;
+              }
+            })
+            .filter(Boolean);
+          
           setCart(frontendCart);
         }
       } else {
@@ -1165,3 +1234,4 @@ export const useCart = (): CartContextType => {
   }
   return ctx;
 };
+

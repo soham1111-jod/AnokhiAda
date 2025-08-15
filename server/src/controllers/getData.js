@@ -192,9 +192,6 @@
 //   }
 // };
 
-
-
-
 // module.exports = {
 //   getCategories,
 //   getProducts,
@@ -203,6 +200,25 @@
 //   getProductsBySlug, // ✅ Add this line
 //   getProductById, // ✅ Add this line
 // };
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 const Product = require("../models/AddPost");
@@ -222,6 +238,98 @@ const getCategories = async (req, res) => {
 };
 
 // ✅ FIXED: Updated getProducts with proper pagination response
+// const getProducts = async (req, res) => {
+//   try {
+//     const {
+//       search,
+//       category, // this is the slug!
+//       minPrice,
+//       maxPrice,
+//       sortBy,
+//       sortOrder = "asc",
+//       page = 1,
+//       limit = 12, // ✅ Changed default to 12 but will be overridden by frontend
+//       skip = 0,   // ✅ Added skip parameter support
+//     } = req.query;
+
+//     console.log(`🔄 Backend: getProducts called with limit=${limit}, skip=${skip}, page=${page}`);
+
+//     const query = {};
+
+//     // Step 1: Search
+//     if (search) {
+//       query.$or = [
+//         { Product_name: { $regex: search, $options: "i" } },
+//         { Product_discription: { $regex: search, $options: "i" } },
+//       ];
+//     }
+
+//     // ✅ Step 2: Category filtering using slug
+//     if (category) {
+//       const categoryDoc = await Category.findOne({ slug: category });
+//       if (!categoryDoc) {
+//         return res.status(400).json({ message: "Invalid category slug" });
+//       }
+//       query.Product_category = categoryDoc._id;
+//     }
+
+//     // Step 3: Price range
+//     if (minPrice || maxPrice) {
+//       query.Product_price = {};
+//       if (minPrice) query.Product_price.$gte = Number(minPrice);
+//       if (maxPrice) query.Product_price.$lte = Number(maxPrice);
+//     }
+
+//     // Step 4: Sorting
+//     const sortOptions = {};
+//     if (sortBy) {
+//       sortOptions[sortBy] = sortOrder === "desc" ? -1 : 1;
+//     }
+
+//     // ✅ Step 5: Improved Pagination - Support both skip and page-based pagination
+//     let skipValue = 0;
+//     if (skip && Number(skip) > 0) {
+//       // Use skip parameter if provided (for Load More functionality)
+//       skipValue = Number(skip);
+//     } else if (page) {
+//       // Use page-based pagination as fallback
+//       skipValue = (Number(page) - 1) * Number(limit);
+//     }
+
+//     console.log(`📊 Backend: Using skip=${skipValue}, limit=${limit}`);
+
+//     const products = await Product.find(query)
+//       .populate("Product_category") // optional
+//       .sort(sortOptions)
+//       .skip(skipValue)
+//       .limit(Number(limit));
+
+//     const total = await Product.countDocuments(query);
+
+//     console.log(`📦 Backend: Found ${products.length} products, total: ${total}`);
+
+//     // ✅ FIXED: Response structure that matches frontend expectations
+//     res.status(200).json({
+//       message: "successfull",
+//       products,
+//       totalProducts: total, // ✅ Frontend expects this field directly
+//       hasMore: (skipValue + products.length) < total, // ✅ Helpful for frontend
+//       pagination: {
+//         total,
+//         page: Number(page),
+//         pages: Math.ceil(total / Number(limit)),
+//         skip: skipValue,
+//         limit: Number(limit)
+//       },
+//     });
+//   } catch (e) {
+//     console.error("❌ Backend error in getProducts:", e);
+//     res.status(400).json({
+//       message: "failed: " + e.message,
+//     });
+//   }
+// };
+
 const getProducts = async (req, res) => {
   try {
     const {
@@ -232,15 +340,27 @@ const getProducts = async (req, res) => {
       sortBy,
       sortOrder = "asc",
       page = 1,
-      limit = 12, // ✅ Changed default to 12 but will be overridden by frontend
-      skip = 0,   // ✅ Added skip parameter support
+      limit = 12,
+      skip = 0,
+      type // ✅ Add type parameter for hamper filtering
     } = req.query;
 
-    console.log(`🔄 Backend: getProducts called with limit=${limit}, skip=${skip}, page=${page}`);
+    console.log(`🔄 Backend: getProducts called with limit=${limit}, skip=${skip}, page=${page}, type=${type}`);
 
     const query = {};
 
-    // Step 1: Search
+    // ✅ Step 1: Hamper filtering (add this FIRST)
+    if (type === 'hamper') {
+      query.isHamper_product = true;
+      query.Product_available = true;
+      query.Hamper_price = { $gt: 0 };
+      console.log('🎁 Filtering for hamper-eligible products');
+    } else {
+      // For regular products, just ensure they're available
+      query.Product_available = true;
+    }
+
+    // Step 2: Search
     if (search) {
       query.$or = [
         { Product_name: { $regex: search, $options: "i" } },
@@ -248,7 +368,7 @@ const getProducts = async (req, res) => {
       ];
     }
 
-    // ✅ Step 2: Category filtering using slug
+    // ✅ Step 3: Category filtering using slug
     if (category) {
       const categoryDoc = await Category.findOne({ slug: category });
       if (!categoryDoc) {
@@ -257,47 +377,66 @@ const getProducts = async (req, res) => {
       query.Product_category = categoryDoc._id;
     }
 
-    // Step 3: Price range
+    // Step 4: Price range (use appropriate price field for hamper products)
     if (minPrice || maxPrice) {
-      query.Product_price = {};
-      if (minPrice) query.Product_price.$gte = Number(minPrice);
-      if (maxPrice) query.Product_price.$lte = Number(maxPrice);
+      const priceField = type === 'hamper' ? 'Hamper_price' : 'Product_price';
+      query[priceField] = {};
+      if (minPrice) query[priceField].$gte = Number(minPrice);
+      if (maxPrice) query[priceField].$lte = Number(maxPrice);
     }
 
-    // Step 4: Sorting
+    // Step 5: Sorting
     const sortOptions = {};
     if (sortBy) {
-      sortOptions[sortBy] = sortOrder === "desc" ? -1 : 1;
+      // ✅ Adjust sort field for hamper products
+      let sortField = sortBy;
+      if (type === 'hamper' && sortBy === 'Product_price') {
+        sortField = 'Hamper_price';
+      }
+      sortOptions[sortField] = sortOrder === "desc" ? -1 : 1;
     }
 
-    // ✅ Step 5: Improved Pagination - Support both skip and page-based pagination
+    // ✅ Step 6: Improved Pagination
     let skipValue = 0;
     if (skip && Number(skip) > 0) {
-      // Use skip parameter if provided (for Load More functionality)
       skipValue = Number(skip);
     } else if (page) {
-      // Use page-based pagination as fallback
       skipValue = (Number(page) - 1) * Number(limit);
     }
 
-    console.log(`📊 Backend: Using skip=${skipValue}, limit=${limit}`);
+    console.log(`📊 Backend: Using skip=${skipValue}, limit=${limit}, query:`, query);
+
+    // ✅ Select appropriate fields based on product type
+    let selectFields = 'Product_name Product_price Product_image Product_category Product_available';
+    if (type === 'hamper') {
+      selectFields += ' isHamper_product Hamper_price';
+    }
 
     const products = await Product.find(query)
-      .populate("Product_category") // optional
+      .populate("Product_category", "category slug")
+      .select(selectFields)
       .sort(sortOptions)
       .skip(skipValue)
-      .limit(Number(limit));
+      .limit(Number(limit))
+      .lean();
 
     const total = await Product.countDocuments(query);
 
+    // ✅ Transform products for consistent response (especially for hamper products)
+    const transformedProducts = products.map(product => ({
+      ...product,
+      Product_category_name: product.Product_category?.category || 'Uncategorized'
+    }));
+
     console.log(`📦 Backend: Found ${products.length} products, total: ${total}`);
 
-    // ✅ FIXED: Response structure that matches frontend expectations
+    // ✅ Response structure for both regular and hamper products
     res.status(200).json({
-      message: "successfull",
-      products,
-      totalProducts: total, // ✅ Frontend expects this field directly
-      hasMore: (skipValue + products.length) < total, // ✅ Helpful for frontend
+      message: "Products fetched successfully",
+      product: transformedProducts, // ✅ Keep 'product' field for compatibility with existing code
+      products: transformedProducts, // ✅ Also provide 'products' field
+      totalProducts: total,
+      hasMore: (skipValue + products.length) < total,
       pagination: {
         total,
         page: Number(page),
@@ -305,6 +444,11 @@ const getProducts = async (req, res) => {
         skip: skipValue,
         limit: Number(limit)
       },
+      // ✅ Add metadata for hamper requests
+      ...(type === 'hamper' && {
+        hamperProductsCount: total,
+        isHamperRequest: true
+      })
     });
   } catch (e) {
     console.error("❌ Backend error in getProducts:", e);
@@ -313,6 +457,7 @@ const getProducts = async (req, res) => {
     });
   }
 };
+
 
 const getBanner = async (req, res) => {
   try {
@@ -358,7 +503,7 @@ const getAllData = async (req, res) => {
       message: "failed: " + e.message,
     });
   }
-};
+}
 
 const getProductsBySlug = async (req, res) => {
   try {
@@ -417,7 +562,7 @@ const getProductById = async (req, res) => {
   } catch (e) {
     res.status(500).json({ message: "Error: " + e.message });
   }
-};
+}
 
 module.exports = {
   getCategories,

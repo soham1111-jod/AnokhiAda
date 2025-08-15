@@ -1,5 +1,4 @@
 
-
 require("dotenv").config();
 const express = require("express");
 const app = express();
@@ -18,7 +17,9 @@ const orderRouter = require("./routes/orderRoutes");
 const wishlistRouter = require("./routes/wishlistRoutes");
 const notificationRouter = require("./routes/notificationRoutes");
 const cartRouter = require("./routes/cartRoutes");
-const numberVerifyrouter = require("./routes/NumberVerifyRoutes")
+const numberVerifyrouter = require("./routes/NumberVerifyRoutes");
+const Cashfreerouter = require("./routes/cashfreeRoutes");
+const hamperRouter = require("./routes/CreateHamperRoutes")
 
 // ✅ ADD THESE MODEL IMPORTS TO REGISTER THEM WITH MONGOOSE
 require("./models/AddPost");     // Registers the 'Products' model
@@ -26,6 +27,8 @@ require("./models/Cart");        // Registers the 'Cart' model
 require("./models/Order");       // Registers the 'Order' model
 require("./models/Wishlist");    // Registers the 'Wishlist' model
 require("./models/user");        // Registers the 'User' model
+require("./models/Notification"); // Registers the 'Notification' model
+require("./models/hamperModel"); // Registers the 'Hamper' model
 
 // Add this after your route registrations in index.js
 console.log("\n=== CART ROUTES DEBUG ===");
@@ -38,18 +41,21 @@ console.log("DELETE /cart/remove/:productId - Remove from cart");
 console.log("DELETE /cart/clear - Clear cart");
 console.log("POST /cart/sync - Sync cart");
 console.log("==========================\n");
-
+ 
 
 const PORT_NO = process.env.PORT_NO || 3000;
+
 app.use(express.json());
 app.use(cookieParser());
 
 app.use(helmet());
 const allowedOrigins = process.env.CLIENT_URL.split(",");
 app.use(cors({
-  origin: "http://localhost:8080",  // Your React/Vue/Next frontend URL
-  credentials: true
+  origin: allowedOrigins,  // Use the environment variable
+  credentials: true,
+  optionsSuccessStatus: 200 // For legacy browser support
 }));
+
 
 app.use(
     session({
@@ -70,8 +76,10 @@ app.use("/orders", orderRouter);
 app.use("/wishlist", wishlistRouter);
 app.use("/cart", cartRouter);
 app.use("/notifications", notificationRouter);
-app.use("/shiprocket",ShipRocketrouter)
-app.use("/api",numberVerifyrouter)
+app.use("/shiprocket",ShipRocketrouter);
+app.use("/api/verify",numberVerifyrouter);
+app.use("/cashfree",Cashfreerouter);
+app.use("/hamper",hamperRouter);
 
 const initialConnection = async () => {
   try {

@@ -28,6 +28,8 @@ import MainLayout from "./components/MainLayout";
 import Profile from "./pages/Profile";
 import GoogleCallback from "./pages/GoogleCallback";
 import Orders from "./pages/Orders";
+import CustomHamperBuilder from "./pages/CustomHamperBuilder";
+import PaymentCallback from './components/PaymentCallback';
 
 const queryClient = new QueryClient();
 
@@ -54,6 +56,9 @@ const App = () => (
                   <Route path="search" element={<SearchResults />} /> {/* Add this route */}
                   <Route path="wishlist" element={<WishlistPage />} />
                   <Route path="cart" element={<CartPage />} />
+                  <Route
+                    path="custom-hamper"
+                    element={<CustomHamperBuilder />} />
                 </Route>
 
                 <Route path="/login" element={<Login />} />
@@ -75,6 +80,7 @@ const App = () => (
 
                 <Route path="profile" element={<Profile />} />
                 <Route path="orders" element={<Orders />} />
+                 <Route path="/payment/callback" element={<PaymentCallback />} />
 
                 <Route path="*" element={<NotFound />} />
               </Routes>

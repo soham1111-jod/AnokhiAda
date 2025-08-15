@@ -1,12 +1,11 @@
 const express = require('express');
 const numberVerifyrouter = express.Router();
-// const { sendOTP, verifyOTP } = require('../controllers/otpController');
+const userMiddleware = require("../middleware/userMiddleware")
+const { sendOtp, verifyOtp ,  CheckphoneNo } = require("../controllers/NumberVerification")
 
-// // Send OTP route
-// numberVerifyrouter.post('/send-otp', sendOTP);
 
-// // Verify OTP route
-// numberVerifyrouter.post('/verify-otp', verifyOTP);
+numberVerifyrouter.post('/send', userMiddleware, sendOtp);     
+numberVerifyrouter.post('/verify', userMiddleware , verifyOtp); 
+numberVerifyrouter.post('/check-phone',userMiddleware, CheckphoneNo)
 
 module.exports = numberVerifyrouter;
- 

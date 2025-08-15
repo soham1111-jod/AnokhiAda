@@ -93,6 +93,11 @@ const Getsignature = async (req, res) => {
 
 const SaveProduct = async (req, res) => {
   try {
+    // ✅ Add debug logging
+    console.log('🔍 BACKEND RECEIVED:', req.body);
+    console.log('🔍 Hamper_price:', req.body.Hamper_price);
+    console.log('🔍 isHamper_product:', req.body.isHamper_product);
+
     if (!req.body.Product_name || req.body.Product_name.length < 2) {
       return res
         .status(400)
@@ -103,24 +108,46 @@ const SaveProduct = async (req, res) => {
       return res.status(400).json({ error: "Minimum price is ₹10" });
     }
 
+    // ✅ Validate hamper pricing if it's a hamper product
+    if (req.body.isHamper_product && req.body.Hamper_price) {
+      const regularPrice = parseFloat(req.body.Product_price);
+      const hamperPrice = parseFloat(req.body.Hamper_price);
+      
+      if (hamperPrice <= 0) {
+        return res.status(400).json({ error: "Hamper price must be greater than 0" });
+      }
+      
+      if (hamperPrice >= regularPrice) {
+        return res.status(400).json({ error: "Hamper price must be less than regular price" });
+      }
+    }
+
     // Verify that the category exists
     const category = await Category.findById(req.body.Product_category);
     if (!category) {
       return res.status(400).json({ error: "Invalid category" });
     }
 
+    // ✅ FIXED: Include hamper fields in the new product
     const newProduct = new Product({
       Product_name: req.body.Product_name,
       Product_discription: req.body.Product_discription,
       Product_price: req.body.Product_price,
+      Hamper_price: req.body.Hamper_price || 0, // ✅ Add hamper price
+      isHamper_product: req.body.isHamper_product || false, // ✅ Add hamper flag
       Product_image: req.body.Product_image || [],
       Product_category: req.body.Product_category,
       Product_available: req.body.Product_available !== false,
       Product_public_id: req.body.Product_public_id,
-      Product_slug: category.slug, // ✅ Save slug here
+      Product_slug: category.slug,
     });
 
     const savedProduct = await newProduct.save();
+
+    // ✅ Add debug logging for saved product
+    console.log('🔍 SAVED PRODUCT:', savedProduct);
+    console.log('🔍 Saved Hamper_price:', savedProduct.Hamper_price);
+    console.log('🔍 Saved isHamper_product:', savedProduct.isHamper_product);
 
     // Populate the category details before sending response
     const populatedProduct = await Product.findById(savedProduct._id)
@@ -140,9 +167,11 @@ const SaveProduct = async (req, res) => {
       product: transformedProduct,
     });
   } catch (e) {
+    console.error('SaveProduct Error:', e);
     res.status(500).json({ message: "Failed to save Because: " + e.message });
   }
 };
+
 
 const DeleteProduct = async (req, res) => {
   try {

@@ -26,8 +26,9 @@ interface Product {
   Product_discription?: string;
   Product_available: boolean;
   score?: number;
-  matches?: any[];
+  matches?: readonly any[]; 
 }
+
 
 const SearchResults = () => {
   const [searchParams] = useSearchParams();
@@ -93,44 +94,45 @@ const SearchResults = () => {
   }, []);
 
   // Optimized search with single implementation
-  useEffect(() => {
-    if (!query || products.length === 0 || !fuse) {
-      setSearchResults([]);
-      return;
+ useEffect(() => {
+  if (!query || products.length === 0 || !fuse) {
+    setSearchResults([]);
+    return;
+  }
+
+  try {
+    const searchResponse = fuse.search(query);
+
+    if (searchResponse.length === 0) {
+      // Fallback manual search
+      const manualResults = products.filter(product => {
+        const searchTerm = query.toLowerCase();
+        return (
+          (product.Product_name || '').toLowerCase().includes(searchTerm) ||
+          (product.Product_discription || '').toLowerCase().includes(searchTerm) ||
+          (product.Product_category?.category || '').toLowerCase().includes(searchTerm)
+        );
+      }).slice(0, 20);
+
+      setSearchResults(manualResults.map(item => ({
+        ...item,
+        score: 0.5,
+        matches: [],
+      })));
+    } else {
+      // ✅ Fixed: Direct assignment without extra .map
+      const results = searchResponse.slice(0, 20).map((result) => ({
+        ...result.item,
+        score: result.score,
+        matches: result.matches,
+      }));
+      setSearchResults(results); // ✅ This is correct now
     }
-
-    try {
-      const searchResponse = fuse.search(query);
-
-      if (searchResponse.length === 0) {
-        // Fallback manual search
-        const manualResults = products.filter(product => {
-          const searchTerm = query.toLowerCase();
-          return (
-            (product.Product_name || '').toLowerCase().includes(searchTerm) ||
-            (product.Product_discription || '').toLowerCase().includes(searchTerm) ||
-            (product.Product_category?.category || '').toLowerCase().includes(searchTerm)
-          );
-        }).slice(0, 20);
-
-        setSearchResults(manualResults.map(item => ({
-          ...item,
-          score: 0.5,
-          matches: [],
-        })));
-      } else {
-        const results = searchResponse.slice(0, 20).map((result) => ({
-          ...result.item,
-          score: result.score,
-          matches: result.matches,
-        }));
-        setSearchResults(results);
-      }
-    } catch (error) {
-      console.error("Search error:", error);
-      setSearchResults([]);
-    }
-  }, [query, products, fuse]);
+  } catch (error) {
+    console.error("Search error:", error);
+    setSearchResults([]);
+  }
+}, [query, products, fuse]);
 
   // Sort results
   const sortedResults = useMemo(() => {

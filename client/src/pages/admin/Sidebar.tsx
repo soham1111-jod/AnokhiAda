@@ -399,9 +399,9 @@ const Sidebar = ({ isOpen, onClose }: SidebarProps) => {
                 <div className="inline-flex items-center px-2.5 py-1.5 border border-transparent text-xs font-medium rounded-full shadow-sm text-white bg-gradient-to-r from-purple-600 to-purple-700">
                   ADMIN
                 </div>
-                <span className="ml-2 text-xl font-semibold text-gray-800 dark:text-white">
+                {/* <span className="ml-2 text-xl font-semibold text-gray-800 dark:text-white">
                   Dashboard
-                </span>
+                </span> */}
               </div>
             ) : (
               // ✅ Collapsed Header

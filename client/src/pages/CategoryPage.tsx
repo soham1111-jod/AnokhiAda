@@ -642,7 +642,7 @@ const CategoryPage = () => {
 
       {/* ✅ SIMPLIFIED Controls Section - Optimized for 320px */}
       {!loading && products.length > 0 && (
-        <div className="bg-white/90 backdrop-blur-md border-y border-purple-100/50 sticky top-16 z-30 shadow-sm">
+        <div className="bg-white/90 backdrop-blur-md border-y border-purple-100/50 sticky top-0 z-30 shadow-sm">
           <div className="container mx-auto px-3 sm:px-4 lg:px-6 py-3 sm:py-4">
             <div className="flex flex-col sm:flex-row items-center justify-between gap-3 sm:gap-4">
               {/* Product count on left - Optimized for 320px */}
@@ -660,7 +660,6 @@ const CategoryPage = () => {
                   onChange={(e) => setSortBy(e.target.value as any)}
                   className="bg-white border-2 border-purple-200/50 rounded-lg sm:rounded-xl px-3 sm:px-4 py-2 sm:py-2.5 text-xs sm:text-sm font-semibold text-gray-700 focus:outline-none focus:ring-2 focus:ring-purple-500/30 focus:border-purple-400 transition-all duration-300 shadow-sm hover:shadow-md w-full sm:min-w-[160px]"
                 >
-                  <option value="name">Name (A-Z)</option>
                   <option value="price-low">Price (Low to High)</option>
                   <option value="price-high">Price (High to Low)</option>
                 </select>
