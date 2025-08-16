@@ -941,6 +941,7 @@ import { useWishlist } from "./WishlistContext";
 import { useToast } from "@/hooks/use-toast";
 import { motion, AnimatePresence } from "framer-motion";
 import Fuse from "fuse.js";
+import { TokenManager } from '@/utils/tokenManager'; 
 
 const Header = () => {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
@@ -966,6 +967,7 @@ const Header = () => {
   const { getTotalItems } = useWishlist();
   const { toast } = useToast();
   const navigate = useNavigate();
+   const [isAdmin, setIsAdmin] = useState(false);
 
   // Navigation items (removed Home route)
   const navigationItems = [
@@ -1175,6 +1177,36 @@ const Header = () => {
     };
   }, [isMobileMenuOpen, isMobileSearchOpen]);
 
+
+   // ✅ Add admin status check
+  useEffect(() => {
+  const checkAdminStatus = () => {
+    const adminToken = TokenManager.getToken('admin');
+    // Read user from your AuthContext and/or localStorage
+    const userRole = user?.role === 'admin' ||
+      localStorage.getItem('user_role') === 'admin' ||
+      (() => {
+        try {
+          const parsedAdmin = JSON.parse(localStorage.getItem('admin_user') || '{}');
+          return parsedAdmin?.role === 'admin'; // if storing role in admin_user object
+        } catch {
+          return false;
+        }
+      })();
+
+    setIsAdmin(Boolean(adminToken) && Boolean(userRole));
+  };
+
+  checkAdminStatus();
+
+  // Listen for storage changes if user switches account in another tab
+  window.addEventListener('storage', checkAdminStatus);
+
+  return () => {
+    window.removeEventListener('storage', checkAdminStatus);
+  };
+}, [user]);
+
   return (
     <>
       {/* ✅ Clean Professional Header */}
@@ -1319,7 +1351,7 @@ const Header = () => {
               </motion.button>
 
               {/* Admin Button */}
-              {user?.role === "admin" && (
+              {isAdmin && (
                 <motion.div 
                   className="relative group hidden lg:block"
                   whileHover={{ scale: 1.05 }}
@@ -1475,7 +1507,7 @@ const Header = () => {
                               )}
                             </button>
                             
-                            {user?.role === "admin" && (
+                            {isAdmin && (
                               <button
                                 onClick={() => {
                                   navigate("/admin");
@@ -1671,7 +1703,7 @@ const Header = () => {
                   </div>
 
                   {/* Admin Section */}
-                  {user?.role === "admin" && (
+                  {isAdmin && (
                     <div className="px-4 pb-4 border-t border-gray-200 mt-4 pt-4">
                       <h3 className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-3">Admin</h3>
                       <div className="space-y-2">

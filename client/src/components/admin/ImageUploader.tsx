@@ -78,6 +78,7 @@
 
 import React, { useRef, useState } from "react";
 import { Loader2 } from "lucide-react";
+import { TokenManager } from '@/utils/tokenManager';
 
 const API_URL: string = import.meta.env.VITE_REACT_APP_API_URL || "http://localhost:3000";
 
@@ -104,11 +105,13 @@ const ImageUploader: React.FC<ImageUploaderProps> = ({ onUpload, cloudinaryOptio
     
     const urls: string[] = [];
 
-     const adminToken = localStorage.getItem('admin_token'); // Adjust key name as needed
+     const adminToken = TokenManager.getToken('admin'); // Adjust key name as needed
       
       if (!adminToken) {
-        throw new Error('Admin token not found. Please login again.');
-      }
+  setError('Admin token not found. Please login again.');
+  setUploading(false);
+  return;
+}
     
     for (const file of Array.from(e.target.files)) {
       try {

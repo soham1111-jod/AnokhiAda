@@ -177,20 +177,31 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
     // Listen for storage events (multi-tab sync)
     const onStorage = (e: StorageEvent) => {
-      if (e.key === 'user' || e.key === 'admin_user' || e.key === 'user_token') {
-        const stored = localStorage.getItem("user") || localStorage.getItem("admin_user");
-        if (stored) {
-          const userData = JSON.parse(stored);
-          const token = localStorage.getItem('user_token') || localStorage.getItem('token');
-          if (token && !userData.token) {
-            userData.token = token;
-          }
-          setUser(userData);
-        } else {
-          setUser(null);
+  // ✅ Listen for ALL relevant storage keys
+  if (['user', 'admin_user', 'user_token', 'admin_token', 'token'].includes(e.key)) {
+    const stored = localStorage.getItem("user") || localStorage.getItem("admin_user");
+    
+    if (stored) {
+      try {
+        const userData = JSON.parse(stored);
+        // ✅ Get appropriate token based on what's available
+        const token = localStorage.getItem('admin_token') || 
+                     localStorage.getItem('user_token') || 
+                     localStorage.getItem('token');
+        
+        if (token && !userData.token) {
+          userData.token = token;
         }
+        setUser(userData);
+      } catch (error) {
+        console.error('Error parsing stored user data:', error);
+        setUser(null);
       }
-    };
+    } else {
+      setUser(null);
+    }
+  }
+};
     
     window.addEventListener("storage", onStorage);
     return () => window.removeEventListener("storage", onStorage);
