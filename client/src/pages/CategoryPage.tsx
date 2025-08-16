@@ -429,7 +429,7 @@
 
 import { useParams } from "react-router-dom";
 import { useEffect, useState } from "react";
-import axios from "axios";
+import axiosInstance from "@/utils/axiosConfig";
 import { Sparkles, Search, SortAsc, Heart, ShoppingCart, Eye } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
@@ -470,20 +470,53 @@ const CategoryPage = () => {
 
   useEffect(() => {
     const fetchProducts = async () => {
+      if (!categoryName) {
+        setLoading(false);
+        return;
+      }
+
       try {
-        const res = await axios.get(
+        setLoading(true);
+        
+        console.log('🔍 Fetching products for category:', categoryName);
+        
+        // ✅ Use axiosInstance instead of axios
+        const res = await axiosInstance.get(
           `/api/getproductsbycategory?category=${categoryName}`
         );
-        setProducts(res.data.product || []);
-      } catch (error) {
-        console.error("Failed to load products", error);
+        
+        console.log('📦 Category products response:', res.data);
+        
+        // ✅ Handle both possible response formats
+        const productsData = res.data.product || res.data.products || [];
+        setProducts(productsData);
+        
+        if (productsData.length === 0) {
+          console.warn('⚠️ No products found for category:', categoryName);
+        }
+        
+      } catch (error: any) {
+        console.error("❌ Failed to load products for category:", categoryName, error);
+        
+        // ✅ Show user-friendly error toast
+        const errorMessage = error.response?.status === 404 
+          ? `No products found in ${categoryName} category`
+          : `Failed to load ${categoryName} products. Please try again.`;
+          
+        toast({
+          title: "Error loading products",
+          description: errorMessage,
+          duration: 3000,
+        });
+        
+        setProducts([]);
       } finally {
         setLoading(false);
       }
     };
 
     fetchProducts();
-  }, [categoryName]);
+  }, [categoryName, toast]);
 
   // Sort products based on selected criteria
   const sortedProducts = [...products].sort((a, b) => {
@@ -535,27 +568,37 @@ const CategoryPage = () => {
   // ✅ UPDATED handleAddToCart with all required fields
   const handleAddToCart = (product: Product): void => {
     if (user) {
-      const cartProduct = {
-        id: parseInt(product._id.slice(-8), 16),
-        _id: product._id,
-        name: product.Product_name,
-        price: `₹${product.Product_price}`,
-        originalPrice: `₹${Math.round(product.Product_price * 1.2)}`,
-        image: product.Product_image[0] || '',
-        rating: product.Product_rating || 4.5,
-        isNew: product.isNew || false,
-        quantity: 1,
-        Product_name: product.Product_name,
-        Product_price: product.Product_price,
-        Product_image: product.Product_image
-      };
-      
-      addToCart(cartProduct);
-      toast({ 
-        title: "Added to cart", 
-        description: `${product.Product_name} has been added to your cart`,
-        duration: 3000 
-      });
+      try {
+        const cartProduct = {
+          id: parseInt(product._id.slice(-8), 16),
+          _id: product._id,
+          name: product.Product_name,
+          price: `₹${product.Product_price}`,
+          originalPrice: `₹${Math.round(product.Product_price * 1.2)}`,
+          image: product.Product_image[0] || '',
+          rating: product.Product_rating || 4.5,
+          isNew: product.isNew || false,
+          quantity: 1,
+          Product_name: product.Product_name,
+          Product_price: product.Product_price,
+          Product_image: product.Product_image,
+          Product_available: product.Product_available
+        };
+        
+        addToCart(cartProduct);
+        toast({ 
+          title: "Added to cart", 
+          description: `${product.Product_name} has been added to your cart`,
+          duration: 3000 
+        });
+      } catch (error) {
+        console.error('❌ Error adding to cart:', error);
+        toast({
+          title: "Error",
+          description: "Failed to add to cart. Please try again.",
+          duration: 2000,
+        });
+      }
     } else {
       navigate("/login");
     }

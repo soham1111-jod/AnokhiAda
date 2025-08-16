@@ -1474,7 +1474,7 @@
 
 import React, { useEffect, useState } from "react";
 import { useParams, Link, useNavigate } from "react-router-dom";
-import axios from "axios";
+import axiosInstance from "@/utils/axiosConfig";
 import {
   Heart,
   ChevronRight,
@@ -1600,34 +1600,55 @@ const ProductDetailPage: React.FC = () => {
   useEffect(() => {
     const fetchProduct = async () => {
       try {
-        const res = await axios.get(`/api/getproductbyid?id=${productId?.trim()}`);
-        setProduct(res.data.product);
-        setSelectedImage(res.data.product.Product_image[0]);
+        // ✅ Use axiosInstance with proper query parameter format
+        const res = await axiosInstance.get(`/api/getproductbyid?id=${productId.trim()}`);
+        
+        console.log('🛍️ Product fetch response:', res.data);
+        
+        if (res.data?.product) {
+          setProduct(res.data.product);
+          setSelectedImage(res.data.product.Product_image[0]);
 
         // Fetch related products from the same category
         try {
-          const relatedRes = await axios.get(
-            `/api/getproducts?category=${res.data.product.Product_category.slug}&limit=8`
-          );
+           const relatedRes = await axiosInstance.get(
+              `/api/getproducts?category=${res.data.product.Product_category.slug}&limit=8`
+            );
+            
+            console.log('🔗 Related products response:', relatedRes.data);
+            
+            // ✅ Handle both 'products' and 'product' fields in response
+            const productsArray = relatedRes.data.products || relatedRes.data.product || [];
           // Filter out current product from related products
           const filtered = relatedRes.data.products?.filter(
             (p: Product) => p._id !== res.data.product._id
           ) || [];
           setRelatedProducts(filtered.slice(0, 6));
-        } catch (error) {
-          console.error("Failed to load related products:", error);
+          } catch (relatedError) {
+            console.error("Failed to load related products:", relatedError);
+            setRelatedProducts([]); // Set empty array on error
+          }
+        } else {
+          console.warn('⚠️ No product data in response:', res.data);
+          setProduct(null);
         }
       } catch (error) {
-        console.error("Failed to load product:", error);
+        console.error("❌ Failed to load product:", error);
+        setProduct(null);
+        
+        // ✅ Show user-friendly error toast
+        toast({
+          title: "Error loading product",
+          description: "Failed to load product details. Please try again.",
+          duration: 3000,
+        });
       } finally {
         setLoading(false);
       }
     };
 
-    if (productId) {
-      fetchProduct();
-    }
-  }, [productId]);
+    fetchProduct();
+  }, [productId, toast]);
 
 
   useEffect(() => {
@@ -1703,19 +1724,20 @@ const ProductDetailPage: React.FC = () => {
     </motion.div>
   );
 
-  if (loading) {
+    if (loading) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-purple-50 to-pink-50">
         <div className="text-center space-y-4 px-4">
           <div className="animate-spin rounded-full h-12 w-12 sm:h-16 sm:w-16 border-4 border-purple-100 border-t-purple-400 mx-auto"></div>
           <p className="text-purple-600 font-medium text-base sm:text-lg">
-            Loading product...
+            Loading product details...
           </p>
         </div>
       </div>
     );
   }
 
+  // ✅ Enhanced not found state
   if (!product) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-purple-50 to-pink-50 p-4">
@@ -1730,12 +1752,21 @@ const ProductDetailPage: React.FC = () => {
             <p className="text-gray-600 text-sm sm:text-base">
               The product you're looking for doesn't exist or has been removed.
             </p>
-            <Button
-              onClick={() => navigate("/")}
-              className="w-full bg-gradient-to-r from-purple-400 to-pink-400 hover:from-purple-500 hover:to-pink-500 text-white border-0"
-            >
-              Browse Products
-            </Button>
+            <div className="flex flex-col sm:flex-row gap-3">
+              <Button
+                onClick={() => navigate("/")}
+                className="flex-1 bg-gradient-to-r from-purple-400 to-pink-400 hover:from-purple-500 hover:to-pink-500 text-white border-0"
+              >
+                Browse Products
+              </Button>
+              <Button
+                variant="outline"
+                onClick={() => navigate(-1)}
+                className="flex-1 border-purple-200 text-purple-600 hover:bg-purple-50"
+              >
+                Go Back
+              </Button>
+            </div>
           </CardContent>
         </Card>
       </div>
