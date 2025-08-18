@@ -25,13 +25,13 @@
 //         let paymentId = null;
 
 //         // Method 1: URL parameters (multiple formats)
-//         const urlOrderId = searchParams.get('order_id') || 
-//                           searchParams.get('order-id') || 
+//         const urlOrderId = searchParams.get('order_id') ||
+//                           searchParams.get('order-id') ||
 //                           searchParams.get('orderId') ||
 //                           searchParams.get('cf_order_id');
-        
-//         const urlPaymentId = searchParams.get('cf_payment_id') || 
-//                             searchParams.get('cf-payment-id') || 
+
+//         const urlPaymentId = searchParams.get('cf_payment_id') ||
+//                             searchParams.get('cf-payment-id') ||
 //                             searchParams.get('payment_id') ||
 //                             searchParams.get('paymentId');
 
@@ -53,7 +53,7 @@
 
 //         if (!orderId) {
 //           console.error('❌ No order ID found from any source');
-          
+
 //           // If we have tempOrder but no orderId, try to extract from tempOrder
 //           if (tempOrder && tempOrder.cashfreeOrderId) {
 //             orderId = tempOrder.cashfreeOrderId;
@@ -67,7 +67,7 @@
 //             description: "Cannot verify payment without Order ID. Please contact support.",
 //             variant: "destructive"
 //           });
-          
+
 //           setTimeout(() => navigate('/orders'), 3000);
 //           return;
 //         }
@@ -79,7 +79,7 @@
 //             description: `Order ${orderId.slice(-6)} data not found. Please contact support if payment was deducted.`,
 //             variant: "destructive"
 //           });
-          
+
 //           setTimeout(() => navigate('/orders'), 3000);
 //           return;
 //         }
@@ -115,7 +115,7 @@
 //           // Clear session storage
 //           sessionStorage.removeItem('tempOrder');
 //           sessionStorage.removeItem('orderId');
-          
+
 //           setTimeout(() => navigate('/orders'), 2000);
 //         } else {
 //           throw new Error(response.data.message || 'Payment verification failed');
@@ -123,14 +123,14 @@
 
 //       } catch (error) {
 //         console.error('❌ Payment callback error:', error);
-        
+
 //         const errorMessage = error.response?.data?.message || error.message;
 //         toast({
 //           title: "Payment Processing Error",
 //           description: `${errorMessage}. Please check your orders or contact support.`,
 //           variant: "destructive"
 //         });
-        
+
 //         setTimeout(() => navigate('/orders'), 3000);
 //       } finally {
 //         setProcessing(false);
@@ -178,7 +178,6 @@
 // };
 
 // export default PaymentCallback;
-
 
 // import { useEffect, useState, useCallback } from 'react';
 // import { useNavigate, useSearchParams } from 'react-router-dom';
@@ -307,7 +306,7 @@
 //       try {
 //         console.log('🔍 Searching by payment ID:', possiblePaymentIds[0]);
 //         const response = await axiosInstance.get(`/cashfree/order-by-payment/${possiblePaymentIds[0]}`);
-        
+
 //         if (response.data.success && response.data.order) {
 //           return {
 //             method: 'paymentId',
@@ -330,7 +329,7 @@
 //             Authorization: `Bearer ${localStorage.getItem('userToken') || sessionStorage.getItem('userToken')}`
 //           }
 //         });
-        
+
 //         if (response.data.success && response.data.order) {
 //           return {
 //             method: 'recentOrder',
@@ -349,14 +348,14 @@
 //       try {
 //         console.log('🔍 Getting all recent orders to find pending payment...');
 //         const response = await axiosInstance.get(`/cashfree/my-orders/${userId}?limit=5`);
-        
+
 //         if (response.data.success && response.data.orders) {
-//           const recentPendingOrder = response.data.orders.find(order => 
-//             order.paymentMethod === 'online' && 
+//           const recentPendingOrder = response.data.orders.find(order =>
+//             order.paymentMethod === 'online' &&
 //             order.paymentStatus === 'pending' &&
 //             new Date(order.createdAt) > new Date(Date.now() - 60 * 60 * 1000) // Within last hour
 //           );
-          
+
 //           if (recentPendingOrder) {
 //             return {
 //               method: 'recentOrdersList',
@@ -380,7 +379,7 @@
 //       setState(prev => ({ ...prev, processing: true, error: null }));
 
 //       const extractedData = extractAllAvailableData();
-      
+
 //       console.log('🔍 Complete payment callback analysis:', {
 //         urlParams: extractedData.allUrlParams,
 //         hashParams: extractedData.hashParams,
@@ -392,8 +391,8 @@
 //       });
 
 //       // Set debug info for display
-//       setState(prev => ({ 
-//         ...prev, 
+//       setState(prev => ({
+//         ...prev,
 //         debugInfo: {
 //           hasUrlOrderId: extractedData.possibleOrderIds.length > 0,
 //           hasPaymentId: extractedData.possiblePaymentIds.length > 0,
@@ -408,9 +407,9 @@
 //       // First, try to get order ID directly from URL
 //       if (extractedData.possibleOrderIds.length > 0) {
 //         const urlOrderId = extractedData.possibleOrderIds[0];
-//         const tempOrder = extractedData.storageData.sessionStorage.tempOrder || 
+//         const tempOrder = extractedData.storageData.sessionStorage.tempOrder ||
 //                          extractedData.storageData.localStorage.tempOrder;
-        
+
 //         if (tempOrder) {
 //           orderInfo = {
 //             method: 'urlAndStorage',
@@ -501,7 +500,7 @@
 
 //     } catch (error) {
 //       console.error('❌ Payment callback error:', error);
-      
+
 //       setState({
 //         processing: false,
 //         success: false,
@@ -542,7 +541,7 @@
 //   return (
 //     <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-purple-50/50 via-pink-50/30 to-white p-4">
 //       <div className="max-w-lg w-full bg-white/90 backdrop-blur-sm rounded-2xl shadow-xl border border-purple-100/50 p-6 sm:p-8 text-center">
-        
+
 //         {/* Processing State */}
 //         {state.processing && (
 //           <>
@@ -556,7 +555,7 @@
 //             <p className="text-gray-600 text-sm mb-4">
 //               We're identifying your order and verifying the payment...
 //             </p>
-            
+
 //             {/* Debug info during processing */}
 //             {state.debugInfo && (
 //               <div className="bg-blue-50 rounded-lg p-4 mb-4 text-left">
@@ -585,7 +584,7 @@
 //                 </div>
 //               </div>
 //             )}
-            
+
 //             <div className="text-xs text-gray-500">
 //               Please don't close this window while we process your payment
 //             </div>
@@ -673,14 +672,11 @@
 
 // export default PaymentCallback;
 
-
-
-
 import { useEffect, useState, useCallback } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { useToast } from "@/hooks/use-toast";
 import axiosInstance from "@/utils/axiosConfig";
-import { CheckCircle, Package, RefreshCw } from "lucide-react";
+import { CheckCircle, Package, RefreshCw, XCircle } from "lucide-react";
 
 interface CallbackState {
   processing: boolean;
@@ -720,40 +716,61 @@ const PaymentCallback = () => {
       searchParams.get("payment_id") ||
       searchParams.get("paymentId");
 
-    return { orderId, paymentId };
+    // ✅ Get cart type and internal order ID
+    const cartType = sessionStorage.getItem("cartType") || "cart";
+    const internalOrderId = sessionStorage.getItem("internalOrderId");
+
+    return { orderId, paymentId, cartType, internalOrderId };
   };
 
   /* -------------------------------------------
-     Main verifier
+     Main verifier with cart clearing logic
   ------------------------------------------- */
   const verifyPayment = useCallback(async () => {
-    const { orderId, paymentId } = getIds();
+  const { orderId, paymentId, cartType, internalOrderId } = getIds();
 
-    if (!orderId) {
-      setState({
-        processing: false,
-        success: false,
-        error: "Order ID not found in callback.",
-        orderData: null,
-      });
-      toast({
-        title: "Order Not Detected",
-        description:
-          "We could not identify your order automatically. Please check your orders page.",
-        variant: "destructive",
-      });
-      setTimeout(() => navigate("/orders"), 4000);
-      return;
-    }
+  if (!orderId) {
+    setState({
+      processing: false,
+      success: false,
+      error: "Order ID not found in callback.",
+      orderData: null,
+    });
+    toast({
+      title: "Order Not Detected",
+      description: "We could not identify your order automatically. Please check your orders page.",
+      variant: "destructive",
+    });
+    setTimeout(() => navigate("/orders"), 4000);
+    return;
+  }
 
-    try {
-      const res = await axiosInstance.post("/cashfree/verify", {
-        orderId,
-        paymentId,          // optional – backend will ignore if null
-        paymentStatus: "SUCCESS",
-      });
+  try {
+    // ✅ Call backend verification
+    const res = await axiosInstance.post("/cashfree/verify-callback", {
+  orderId,
+  paymentId,
+  internalOrderId,
+});
 
-      if (!res.data.success) throw new Error(res.data.message);
+    console.log('🔍 Verification response:', res.data);
+
+    // ✅ SIMPLIFIED: Check backend response directly
+    if (res.data.success && res.data.paymentStatus === "SUCCESS") {
+      // ✅ Payment verified as successful
+      try {
+        // Clear cart based on type
+        if (cartType === "cart") {
+          await axiosInstance.delete("/cart/clear");
+          console.log("🛒 Cart cleared after successful payment");
+        } else if (cartType === "hamper") {
+          await axiosInstance.delete("/hamper/clear");
+          console.log("🎁 Hamper cleared after successful payment");
+        }
+      } catch (cartError) {
+        console.warn("⚠️ Failed to clear cart:", cartError);
+        // Don't fail the whole process if cart clearing fails
+      }
 
       setState({
         processing: false,
@@ -762,43 +779,61 @@ const PaymentCallback = () => {
         orderData: res.data.order,
       });
 
-      
-
       toast({
         title: "Payment Successful 🎉",
-        description: `Order #${res.data.order._id
-          .slice(-6)
-          .toUpperCase()} confirmed.`,
+        description: `Order #${res.data.order._id.slice(-6).toUpperCase()} confirmed.`,
         duration: 5000,
       });
 
-      // cleanup
-      ["orderId", "paymentMethod"].forEach((k) => {
+      // Clear session storage
+      ["orderId", "paymentMethod", "cartType", "internalOrderId"].forEach((k) => {
         sessionStorage.removeItem(k);
         localStorage.removeItem(k);
       });
 
       setTimeout(() => navigate("/orders"), 3000);
-    } catch (err: any) {
-      console.error("Payment verification error:", err);
+      
+    } else {
+      // ✅ Payment failed or verification failed
       setState({
         processing: false,
         success: false,
-        error: err.message || "Verification failed",
-        orderData: null,
+        error: res.data.message || `Payment failed with status: ${res.data.paymentStatus}`,
+        orderData: res.data.order,
       });
 
       toast({
-        title: "Verification Failed",
-        description:
-          "We couldn't verify your payment automatically. If amount was debited, contact support.",
+        title: "Payment Failed",
+        description: "Your payment was not successful. Your cart is preserved for retry.",
         variant: "destructive",
         duration: 8000,
       });
 
-      setTimeout(() => navigate("/orders"), 6000);
+      // DON'T clear session storage - preserve for retry
+      setTimeout(() => navigate("/cart"), 4000);
     }
-  }, [navigate, toast, searchParams]);
+
+  } catch (err) {
+    console.error("Payment verification error:", err);
+    
+    setState({
+      processing: false,
+      success: false,
+      error: err.response?.data?.message || err.message || "Verification failed",
+      orderData: null,
+    });
+
+    toast({
+      title: "Verification Failed",
+      description: "We couldn't verify your payment. If amount was debited, contact support.",
+      variant: "destructive",
+      duration: 8000,
+    });
+
+    setTimeout(() => navigate("/orders"), 6000);
+  }
+}, [navigate, toast, searchParams]);
+
 
   /* -------------------------------------------
      Run verifier once
@@ -808,7 +843,7 @@ const PaymentCallback = () => {
   }, [verifyPayment]);
 
   /* -------------------------------------------
-     UI
+     Enhanced UI with payment failure state
   ------------------------------------------- */
   const retry = () => {
     setState((s) => ({ ...s, processing: true, error: null }));
@@ -829,13 +864,13 @@ const PaymentCallback = () => {
               Verifying Payment…
             </h2>
             <p className="text-gray-600 text-sm">
-              Please don’t close or refresh this page.
+              Please don't close or refresh this page.
             </p>
           </>
         )}
 
         {/* Success */}
-        {!state.processing && state.success && (
+        {!state.processing && state.success === true && (
           <>
             <div className="w-16 h-16 bg-green-500 rounded-full flex items-center justify-center mx-auto mb-4">
               <CheckCircle className="w-8 h-8 text-white" />
@@ -845,36 +880,46 @@ const PaymentCallback = () => {
             </h2>
             {state.orderData && (
               <p className="text-gray-700 mb-2">
-                Order #
-                {state.orderData._id?.slice(-6).toUpperCase()} – Amount ₹
+                Order #{state.orderData._id?.slice(-6).toUpperCase()} – Amount ₹
                 {state.orderData.totalAmount}
               </p>
             )}
             <p className="text-sm text-gray-500">
-              Redirecting you to “My Orders”…
+              Redirecting you to "My Orders"…
             </p>
           </>
         )}
 
-        {/* Error */}
+        {/* ✅ Enhanced Error/Failure State */}
         {!state.processing && state.success === false && (
           <>
-            <div className="w-16 h-16 bg-orange-500 rounded-full flex items-center justify-center mx-auto mb-4">
-              <Package className="w-8 h-8 text-white" />
+            <div className="w-16 h-16 bg-red-500 rounded-full flex items-center justify-center mx-auto mb-4">
+              <XCircle className="w-8 h-8 text-white" />
             </div>
-            <h2 className="text-xl font-semibold bg-gradient-to-r from-orange-600 to-amber-600 bg-clip-text text-transparent mb-2">
-              Order Not Found
+            <h2 className="text-xl font-semibold bg-gradient-to-r from-red-600 to-orange-600 bg-clip-text text-transparent mb-2">
+              {state.error?.includes("Payment failed")
+                ? "Payment Failed"
+                : "Verification Failed"}
             </h2>
             <p className="text-sm text-gray-600 mb-6">
-              {state.error || "We couldn’t match your payment to an order."}
+              {state.error || "We couldn't verify your payment."}
             </p>
             <div className="space-y-3">
-              <button
-                onClick={() => navigate("/orders")}
-                className="w-full px-4 py-3 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition-colors font-medium"
-              >
-                Go to My Orders
-              </button>
+              {state.error?.includes("Payment failed") ? (
+                <button
+                  onClick={() => navigate("/cart")}
+                  className="w-full px-4 py-3 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition-colors font-medium"
+                >
+                  Return to Cart & Retry
+                </button>
+              ) : (
+                <button
+                  onClick={() => navigate("/orders")}
+                  className="w-full px-4 py-3 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition-colors font-medium"
+                >
+                  Go to My Orders
+                </button>
+              )}
               <button
                 onClick={retry}
                 className="w-full flex items-center justify-center gap-2 px-4 py-2 text-purple-600 border border-purple-200 rounded-lg hover:bg-purple-50 transition-colors text-sm"

@@ -564,26 +564,29 @@ exports.createOrder = async (req, res) => {
     }));
 
     // Enhanced base order data with delivery breakdown
-    const baseOrderData = {
-      userId: new mongoose.Types.ObjectId(userId),
-      items: formattedItems,
-      shippingAddress: {
-        street: shippingAddress.street?.trim(),
-        city: shippingAddress.city?.trim(),
-        state: shippingAddress.state?.trim(),
-        pincode: shippingAddress.pincode?.toString().trim(),
-        country: shippingAddress.country || "India",
-      },
-      // Store breakdown for transparency
-      itemsTotal: calculatedItemsTotal,
-      deliveryCharge: deliveryFee,
-      totalAmount: finalTotal,
+    // In createOrder function, add this check for hamper orders
+const baseOrderData = {
+  userId: new mongoose.Types.ObjectId(userId),
+  items: formattedItems,
+  shippingAddress: {
+    street: shippingAddress.street?.trim(),
+    city: shippingAddress.city?.trim(),
+    state: shippingAddress.state?.trim(),
+    pincode: shippingAddress.pincode?.toString().trim(),
+    country: shippingAddress.country || "India",
+  },
+  itemsTotal: calculatedItemsTotal,
+  deliveryCharge: deliveryFee,
+  totalAmount: finalTotal,
+  paymentMethod: paymentMethod || "cod",
+  Contact_number: Contact_number.toString(),
+  user_email: user_email.trim(),
+  notes: notes?.trim() || null,
+  
+  // ✅ Add this field to identify hamper orders
+  isCustomHamper: req.body.isCustomHamper || false,
+};
 
-      paymentMethod: paymentMethod || "cod",
-      Contact_number: Contact_number.toString(),
-      user_email: user_email.trim(),
-      notes: notes?.trim() || null,
-    };
 
     // Handle COD orders - create immediately
     if (paymentMethod === "cod") {
@@ -733,12 +736,11 @@ exports.createOrder = async (req, res) => {
   }
 };
 
-// ✅ IMPROVEMENT 4: Enhanced verify payment with clear DB lookup
+
+// ✅ FIXED: Enhanced verifyPayment that handles multiple attempts
 exports.verifyPayment = async (req, res) => {
   try {
-    console.log("🔍 Verifying payment:", req.body);
-
-    const { orderId, paymentStatus, paymentId } = req.body;
+    const { orderId, internalOrderId } = req.body;
 
     if (!orderId) {
       return res.status(400).json({
@@ -747,8 +749,11 @@ exports.verifyPayment = async (req, res) => {
       });
     }
 
-    // ✅ Find order by cashfreeOrderId (no more tempOrder needed)
-    const order = await Order.findOne({ cashfreeOrderId: orderId });
+    // Find order
+    let order = await Order.findOne({ cashfreeOrderId: orderId });
+    if (!order && internalOrderId) {
+      order = await Order.findById(internalOrderId);
+    }
 
     if (!order) {
       return res.status(404).json({
@@ -757,108 +762,74 @@ exports.verifyPayment = async (req, res) => {
       });
     }
 
-    // Verify payment with Cashfree
-    try {
-      const verificationResponse = await axios.get(
-        `${CASHFREE_BASE_URL}/orders/${orderId}/payments`,
-        {
-          headers: {
-            "x-client-id": CASHFREE_APP_ID,
-            "x-client-secret": CASHFREE_SECRET_KEY,
-            "x-api-version": "2022-09-01",
-          },
-        }
-      );
-
-      const paymentDetails = verificationResponse.data;
-      console.log("💳 Payment verification response:", paymentDetails);
-
-      // Check if payment was successful
-      const isPaymentSuccessful = paymentDetails.some(
-        (payment) => payment.payment_status === "SUCCESS"
-      );
-
-      if (isPaymentSuccessful || paymentStatus === "SUCCESS") {
-        order.paymentStatus = "paid";
-        order.status = "processing";
-        order.paymentId = paymentId || paymentDetails[0]?.cf_payment_id;
-        await order.save();
-
-        // Enhanced notification with total amount
-        await createNotification(
-          order.userId,
-          "Payment Successful!",
-          `Your payment of ₹${
-            order.totalAmount
-          } has been processed successfully. Order #${order._id
-            .toString()
-            .slice(-6)
-            .toUpperCase()} is being prepared.`,
-          "order",
-          order._id
-        );
-
-        console.log("✅ Payment verified and order updated:", order._id);
-
-        return res.json({
-          success: true,
-          message: "Payment verified and order updated successfully",
-          order,
-        });
-      } else {
-        console.log("❌ Payment verification failed");
-
-        return res.json({
-          success: false,
-          message: "Payment verification failed. Order not updated.",
-          paymentDetails,
-        });
+    // ✅ Fetch ALL payment attempts for this order
+    const verificationResponse = await axios.get(
+      `${CASHFREE_BASE_URL}/orders/${orderId}/payments`,
+      {
+        headers: {
+          "x-client-id": CASHFREE_APP_ID,
+          "x-client-secret": CASHFREE_SECRET_KEY,
+          "x-api-version": "2022-09-01",
+        },
       }
-    } catch (verificationError) {
-      console.error("❌ Payment verification error:", verificationError);
+    );
 
-      // If verification fails but frontend says SUCCESS, create order anyway
-      if (paymentStatus === "SUCCESS") {
-        order.paymentStatus = "paid";
-        order.status = "processing";
-        order.paymentId = paymentId;
-        await order.save();
+    const payments = verificationResponse.data || [];
+    console.log(`💳 Found ${payments.length} payment attempts for order ${orderId}`);
 
-        await createNotification(
-          order.userId,
-          "Payment Received",
-          `Your payment of ₹${
-            order.totalAmount
-          } has been received. Order #${order._id
-            .toString()
-            .slice(-6)
-            .toUpperCase()} is being processed.`,
-          "order",
-          order._id
-        );
+    // ✅ Check if ANY payment was successful (not just the latest)
+    const successfulPayment = payments.find(payment => payment.payment_status === "SUCCESS");
+    const hasSuccessfulPayment = !!successfulPayment;
 
-        return res.json({
-          success: true,
-          message: "Payment successful, order updated",
-          order,
-        });
-      }
+    console.log('🔍 Payment attempts:', payments.map(p => ({
+      id: p.cf_payment_id,
+      status: p.payment_status,
+      method: p.payment_method
+    })));
 
-      return res.status(500).json({
+    if (hasSuccessfulPayment) {
+      // ✅ At least one payment succeeded - mark order as successful
+      order.paymentStatus = "paid";
+      order.status = "processing";
+      order.paymentId = successfulPayment.cf_payment_id;
+      await order.save();
+
+      console.log("✅ Order marked as successful due to successful payment attempt");
+
+      return res.json({
+        success: true,
+        message: "Payment verified successfully",
+        paymentStatus: "SUCCESS",
+        order,
+        paymentDetails: payments
+      });
+    } else {
+      // ✅ No successful payments found
+      order.paymentStatus = "failed";
+      order.status = "failed";
+      await order.save();
+
+      console.log("❌ All payment attempts failed");
+
+      return res.json({
         success: false,
-        message: "Payment verification failed",
-        error: verificationError.message,
+        message: "All payment attempts failed",
+        paymentStatus: "FAILED",
+        order,
+        paymentDetails: payments
       });
     }
+
   } catch (error) {
     console.error("❌ Payment verification error:", error);
     res.status(500).json({
       success: false,
-      message: "Server error during payment verification",
+      message: "Payment verification failed",
       error: error.message,
     });
   }
 };
+
 
 // Enhanced getUserOrders with better population
 exports.getUserOrders = async (req, res) => {

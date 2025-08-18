@@ -22,7 +22,8 @@ const userMiddleware = require('../middleware/userMiddleware');
 
 // Payment routes
 Cashfreerouter.post('/create', userMiddleware, createOrder);       
-Cashfreerouter.post('/verify', verifyPayment);      
+Cashfreerouter.post('/verify', userMiddleware, verifyPayment); // For authenticated users
+Cashfreerouter.post('/verify-callback', verifyPayment); // For payment callbacks (no auth)     
 Cashfreerouter.get('/my-orders/:userId', userMiddleware, getUserOrders); 
 Cashfreerouter.post('/webhook', handleWebhook); // For Cashfree webhooks
 

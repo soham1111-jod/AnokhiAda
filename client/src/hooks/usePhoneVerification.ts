@@ -33,7 +33,15 @@ export const usePhoneVerification = () => {
 
   const handlePhoneVerification = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!phoneNumber || phoneNumber.length !== 10) {
+    const cleanNumber = phoneNumber.replace(/\D/g, "");
+    if (
+      !cleanNumber ||
+      cleanNumber.length !== 10 ||
+      (!cleanNumber.startsWith("6") &&
+        !cleanNumber.startsWith("7") &&
+        !cleanNumber.startsWith("8") &&
+        !cleanNumber.startsWith("9"))
+    ) {
       toast({
         title: "Invalid Phone Number",
         description: "Please enter a valid 10-digit phone number",
@@ -44,16 +52,20 @@ export const usePhoneVerification = () => {
 
     try {
       setIsVerifyingPhone(true);
-      const checkResponse = await axiosInstance.post("/api/verify/check-phone", {
-        phoneNumber: phoneNumber,
-      });
+      const checkResponse = await axiosInstance.post(
+        "/api/verify/check-phone",
+        {
+          phoneNumber: phoneNumber,
+        }
+      );
 
       if (checkResponse.data.success && checkResponse.data.isVerified) {
         setPhoneVerified(true);
         setShowPhoneVerification(false);
         toast({
           title: "Phone Verified! 📱",
-          description: "Phone number found in our records. Proceeding to checkout.",
+          description:
+            "Phone number found in our records. Proceeding to checkout.",
           variant: "default",
         });
         return true;
@@ -79,7 +91,8 @@ export const usePhoneVerification = () => {
       console.error("Phone verification error:", error);
       toast({
         title: "Verification Failed",
-        description: error.response?.data?.message || "Failed to verify phone number",
+        description:
+          error.response?.data?.message || "Failed to verify phone number",
         variant: "destructive",
       });
     } finally {
@@ -114,7 +127,8 @@ export const usePhoneVerification = () => {
         setShowOTPInput(false);
         toast({
           title: "Phone Verified Successfully! ✅",
-          description: "Your phone number has been verified. Proceeding to checkout.",
+          description:
+            "Your phone number has been verified. Proceeding to checkout.",
           variant: "default",
         });
         return true;
@@ -123,7 +137,8 @@ export const usePhoneVerification = () => {
       console.error("OTP verification error:", error);
       toast({
         title: "Invalid OTP",
-        description: error.response?.data?.message || "Please enter the correct OTP",
+        description:
+          error.response?.data?.message || "Please enter the correct OTP",
         variant: "destructive",
       });
     } finally {
@@ -185,7 +200,7 @@ export const usePhoneVerification = () => {
     otpTimer,
     canResendOTP,
     otpInputRefs,
-    
+
     // Actions
     setShowPhoneVerification,
     setPhoneNumber,

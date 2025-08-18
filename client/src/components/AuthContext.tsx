@@ -284,13 +284,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         localStorage.setItem('user_token', token); // ✅ Consistent with signup
       }
     }
-    
-    console.log('✅ User data login successful');
   };
 
   const updateUser = (userObj: any) => {
-    console.log('🔍 Updating user:', userObj.email);
-    
     // Preserve existing token if not provided
     const updatedUser = {
       ...userObj,
@@ -305,34 +301,33 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     } else {
       localStorage.setItem('user', JSON.stringify(updatedUser));
     }
-    
-    console.log('✅ User updated successfully');
   };
 
   const logout = async () => {
-    try {
-      console.log('🔍 Logging out user');
-      
-      // Call backend logout endpoint
-      await fetch(`${API_URL}/auth/logout`, {
-        method: 'POST',
-        credentials: 'include'
-      });
-    } catch (error) {
-      console.error('Logout API error:', error);
-      // Continue with local logout even if API fails
+  
+  try {
+    const response = await fetch(`${API_URL}/auth/logout`, {
+      method: 'POST',
+      credentials: 'include',
+    });
+    if (!response.ok && response.status !== 401) {
+      // Only log error if it's not 401 which we treat as acceptable
+      console.error('Logout API returned error:', response.status);
     }
-    
-    // Clear local state and storage
-    setUser(null);
-    localStorage.removeItem("user");
-    localStorage.removeItem("user_token");
-    localStorage.removeItem("token");
-    localStorage.removeItem("admin_user");
-    localStorage.removeItem("admin_token");
-    
-    console.log('✅ User logged out successfully');
-  };
+  } catch (error) {
+    console.error('Logout API error:', error);
+    // Continue logout anyway
+  }
+
+  // Clear all local sensitive info / state
+  setUser(null);
+  localStorage.removeItem("user");
+  localStorage.removeItem("user_token");
+  localStorage.removeItem("token");
+  localStorage.removeItem("admin_user");
+  localStorage.removeItem("admin_token");
+};
+
 
   // isAuthenticated is true if user exists and has a token
   const isAuthenticated = Boolean(user && user.token);

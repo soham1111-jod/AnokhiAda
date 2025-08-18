@@ -440,12 +440,19 @@ const addToCart = async (req, res) => {
       return res.status(400).json({ message: 'Product is not available' });
     }
 
-    // ✅ OPTIONAL: Prevent hamper products from being added to regular cart
-    if (product.isHamper_product) {
-      return res.status(400).json({ 
-        message: 'Hamper products must be added through the custom hamper builder' 
-      });
-    }
+    // Allow hamper-eligible products in the normal cart at regular price
+if (product.isHamper_product) {
+  // If the request tries to add using the regular price, allow.
+  // If (optional) you pass price in body, check it!
+  if (req.body.price && Number(req.body.price) !== Number(product.Product_price)) {
+    return res.status(400).json({
+      message: 'Hamper products must be added through the custom hamper builder'
+    });
+  }
+  // If not passing price, you may trust that if it's the /cart/add endpoint, add at normal price
+  // You could remove the blocker entirely.
+}
+
 
     // Find or create cart
     let cart = await Cart.findOne({ userId: req.user._id });
