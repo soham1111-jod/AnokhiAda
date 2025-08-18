@@ -19,11 +19,11 @@ const API_URL = import.meta.env.VITE_REACT_APP_API_URL || "http://localhost:3000
 const cloudinaryOptions = [
   {
     name: "Primary Cloud",
-    endpoint: "/api/admin/getsignature" // This matches your server endpoint
+    endpoint: "/api/admin/getsignature"
   },
   {
-    name: "Secondary Cloud", 
-    endpoint: "/api/admin/getsignature" // Same endpoint, different cloudInstance parameter
+    name: "Secondary Cloud",
+    endpoint: "/api/admin/getsignature"
   }
 ];
 
@@ -58,7 +58,15 @@ export default function Banners() {
   const handleAddBanner = async (banner: any) => {
     setLoading(true);
     try {
-      const res = await axios.post(`${API_URL}/admin/addbanner`, banner, { withCredentials: true });
+      const adminToken = localStorage.getItem("admin_token");
+      const res = await axios.post(
+        `${API_URL}/admin/addbanner`,
+        banner,
+        {
+          withCredentials: true,
+          headers: adminToken ? { Authorization: `Bearer ${adminToken}` } : {}
+        }
+      );
       setBanners(res.data.Banners || []);
       setOpen(false);
       toast({
@@ -81,7 +89,15 @@ export default function Banners() {
   const handleDelete = async (_id: string, Banner_public_id: string) => {
     setLoading(true);
     try {
-      await axios.post(`${API_URL}/admin/deletebanner`, { _id, Banner_public_id }, { withCredentials: true });
+      const adminToken = localStorage.getItem("admin_token");
+      await axios.post(
+        `${API_URL}/admin/deletebanner`,
+        { _id, Banner_public_id },
+        {
+          withCredentials: true,
+          headers: adminToken ? { Authorization: `Bearer ${adminToken}` } : {}
+        }
+      );
       setBanners((prev) => prev.filter((b) => b._id !== _id));
       toast({
         title: "Banner Deleted",
