@@ -50,7 +50,8 @@ export default function Users() {
       ) : (
         <table className="min-w-full border">
           <thead>
-            <tr className="bg-gray-100">
+            <tr className="bg-gray-100 dark:bg-black">
+
               <th className="p-2 border">Name</th>
               <th className="p-2 border">Email</th>
               <th className="p-2 border">Role</th>
